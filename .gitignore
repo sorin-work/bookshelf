@@ -1,0 +1,26 @@
+# Binaries
+/bookshelf
+/bin/
+*.exe
+*.test
+
+# Test and coverage output
+*.out
+coverage.html
+
+# Local data
+*.db
+*.db-shm
+*.db-wal
+/data/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
