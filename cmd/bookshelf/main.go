@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sorin-work/bookshelf/internal/config"
+	"github.com/sorin-work/bookshelf/internal/db"
 )
 
 func main() {
@@ -32,6 +33,18 @@ func run() error {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	conn, err := db.Open(ctx, cfg.DBPath)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	applied, err := db.Migrate(ctx, conn)
+	if err != nil {
+		return err
+	}
+	log.Info("database ready", "path", cfg.DBPath, "migrations_applied", applied)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
