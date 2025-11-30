@@ -24,6 +24,7 @@ var staticFiles embed.FS
 type page struct {
 	Title string
 	User  *store.User
+	CSRF  string
 	Data  any
 }
 
@@ -72,6 +73,7 @@ func (s *Server) execute(w http.ResponseWriter, r *http.Request, status int, nam
 		return
 	}
 	p.User = currentUser(r)
+	p.CSRF = csrfToken(r)
 	var buf bytes.Buffer
 	if err := t.ExecuteTemplate(&buf, block, p); err != nil {
 		s.serverError(w, r, fmt.Errorf("render %s/%s: %w", name, block, err))

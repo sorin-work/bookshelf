@@ -2,6 +2,7 @@
 <div class="narrow">
   <h1>Log in</h1>
   <form method="post" action="/login" class="card" novalidate>
+    {{template "csrf" .}}
     {{with index .Data.Errors "form"}}<p class="alert error">{{.}}</p>{{end}}
     <input type="hidden" name="next" value="{{.Data.Next}}">
     <div class="field">
