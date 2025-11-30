@@ -14,6 +14,8 @@ import (
 
 	"github.com/sorin-work/bookshelf/internal/config"
 	"github.com/sorin-work/bookshelf/internal/db"
+	"github.com/sorin-work/bookshelf/internal/store"
+	"github.com/sorin-work/bookshelf/internal/web"
 )
 
 func main() {
@@ -46,15 +48,19 @@ func run() error {
 	}
 	log.Info("database ready", "path", cfg.DBPath, "migrations_applied", applied)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		_, _ = w.Write([]byte("ok\n"))
+	app, err := web.New(web.Options{
+		Store:         store.New(conn),
+		Logger:        log,
+		SecureCookies: cfg.SecureCookies,
+		SessionTTL:    cfg.SessionTTL,
 	})
+	if err != nil {
+		return err
+	}
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           mux,
+		Handler:           app.Handler(),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      30 * time.Second,

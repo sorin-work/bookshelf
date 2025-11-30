@@ -1,0 +1,100 @@
+package web
+
+import (
+	"bytes"
+	"embed"
+	"fmt"
+	"html/template"
+	"io/fs"
+	"net/http"
+	"path"
+	"strings"
+	"time"
+)
+
+//go:embed templates
+var templateFiles embed.FS
+
+//go:embed static
+var staticFiles embed.FS
+
+// page is what every template gets. Handlers put their own values in Data.
+type page struct {
+	Title string
+	Data  any
+}
+
+var funcs = template.FuncMap{
+	"date": func(t time.Time) string {
+		if t.IsZero() {
+			return ""
+		}
+		return t.Format("2 Jan 2006")
+	},
+}
+
+// parsePages builds one template set per page so each page can define its
+// own "content" block on top of the shared layout and partials.
+func parsePages() (map[string]*template.Template, error) {
+	names, err := fs.Glob(templateFiles, "templates/*.html")
+	if err != nil {
+		return nil, err
+	}
+	pages := map[string]*template.Template{}
+	for _, name := range names {
+		base := path.Base(name)
+		if base == "layout.html" {
+			continue
+		}
+		t, err := template.New(base).Funcs(funcs).ParseFS(templateFiles,
+			"templates/layout.html", "templates/partials/*.html", name)
+		if err != nil {
+			return nil, fmt.Errorf("parse %s: %w", base, err)
+		}
+		pages[base] = t
+	}
+	return pages, nil
+}
+
+// render writes a full page. It renders into a buffer first so a template
+// error turns into a clean 500 instead of half a page.
+func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name string, p page) {
+	s.execute(w, r, status, name, "layout", p)
+}
+
+func (s *Server) execute(w http.ResponseWriter, r *http.Request, status int, name, block string, p page) {
+	t, ok := s.pages[name]
+	if !ok {
+		s.serverError(w, r, fmt.Errorf("no template %q", name))
+		return
+	}
+	var buf bytes.Buffer
+	if err := t.ExecuteTemplate(&buf, block, p); err != nil {
+		s.serverError(w, r, fmt.Errorf("render %s/%s: %w", name, block, err))
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	_, _ = buf.WriteTo(w)
+}
+
+func (s *Server) serverError(w http.ResponseWriter, r *http.Request, err error) {
+	s.log.Error("request failed", "method", r.Method, "path", r.URL.Path, "err", err)
+	http.Error(w, "Something went wrong on our side. Please try again.", http.StatusInternalServerError)
+}
+
+func staticHandler() http.Handler {
+	sub, err := fs.Sub(staticFiles, "static")
+	if err != nil {
+		panic(err)
+	}
+	fileServer := http.FileServer(http.FS(sub))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/") {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Cache-Control", "public, max-age=3600")
+		fileServer.ServeHTTP(w, r)
+	})
+}

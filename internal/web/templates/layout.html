@@ -1,0 +1,20 @@
+{{define "layout"}}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{if .Title}}{{.Title}} · {{end}}Bookshelf</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Bookshelf</a>
+    <nav class="nav">
+      {{block "nav" .}}{{end}}
+    </nav>
+  </header>
+  <main class="container">
+    {{template "content" .}}
+  </main>
+</body>
+</html>{{end}}

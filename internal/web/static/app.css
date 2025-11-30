@@ -1,0 +1,91 @@
+:root {
+  --bg: #faf8f5;
+  --surface: #ffffff;
+  --text: #22201c;
+  --muted: #6b665e;
+  --border: #e3ded6;
+  --accent: #2f5d50;
+  --accent-text: #ffffff;
+  --danger: #a33a2c;
+  --warning: #9a6a12;
+  --ok: #2f6d3a;
+  --radius: 6px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; }
+
+a { color: var(--accent); }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.nav { display: flex; gap: 1rem; flex: 1; align-items: center; }
+.nav a { text-decoration: none; color: var(--muted); }
+.nav a:hover, .nav a.active { color: var(--text); }
+
+.container { max-width: 1040px; margin: 0 auto; padding: 1.5rem; }
+
+.hero { padding: 3rem 0; max-width: 40rem; }
+.hero h1 { font-size: 2.2rem; margin: 0 0 0.5rem; }
+.hero p { color: var(--muted); font-size: 1.1rem; }
+
+h1 { font-size: 1.6rem; margin: 0 0 1rem; }
+h2 { font-size: 1.2rem; margin: 1.5rem 0 0.75rem; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+
+form .field { margin-bottom: 1rem; }
+label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+input, select, textarea {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.button, button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: pointer;
+  text-decoration: none;
+}
+.button.secondary, button.secondary { background: transparent; color: var(--accent); }
+.button.danger, button.danger { background: var(--danger); border-color: var(--danger); }
+
+.field-error { color: var(--danger); margin: 0.25rem 0 0; font-size: 0.9rem; }
+.muted { color: var(--muted); }
