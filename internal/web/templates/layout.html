@@ -12,6 +12,14 @@
     <nav class="nav">
       {{block "nav" .}}{{end}}
     </nav>
+    <div class="account">
+      {{if .User}}
+        <span class="muted">{{.User.Name}}</span>
+      {{else}}
+        <a href="/login">Log in</a>
+        <a class="button" href="/signup">Sign up</a>
+      {{end}}
+    </div>
   </header>
   <main class="container">
     {{template "content" .}}

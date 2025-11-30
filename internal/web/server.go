@@ -61,7 +61,13 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /healthz", s.healthz)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", staticHandler()))
 	mux.HandleFunc("GET /{$}", s.home)
-	return mux
+
+	mux.HandleFunc("GET /signup", s.signupPage)
+	mux.HandleFunc("POST /signup", s.signup)
+	mux.HandleFunc("GET /login", s.loginPage)
+	mux.HandleFunc("POST /login", s.login)
+
+	return s.loadUser(mux)
 }
 
 func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {

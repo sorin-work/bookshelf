@@ -1,0 +1,24 @@
+{{define "content"}}
+<div class="narrow">
+  <h1>Create an account</h1>
+  <form method="post" action="/signup" class="card" novalidate>
+    <div class="field">
+      <label for="name">Name</label>
+      <input id="name" name="name" value="{{.Data.Name}}" autocomplete="name" required>
+      {{template "field_error" index .Data.Errors "name"}}
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" value="{{.Data.Email}}" autocomplete="email" required>
+      {{template "field_error" index .Data.Errors "email"}}
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+      {{template "field_error" index .Data.Errors "password"}}
+    </div>
+    <button type="submit">Sign up</button>
+  </form>
+  <p class="muted">Already have an account? <a href="/login">Log in</a></p>
+</div>
+{{end}}

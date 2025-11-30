@@ -10,6 +10,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/sorin-work/bookshelf/internal/store"
 )
 
 //go:embed templates
@@ -21,6 +23,7 @@ var staticFiles embed.FS
 // page is what every template gets. Handlers put their own values in Data.
 type page struct {
 	Title string
+	User  *store.User
 	Data  any
 }
 
@@ -68,6 +71,7 @@ func (s *Server) execute(w http.ResponseWriter, r *http.Request, status int, nam
 		s.serverError(w, r, fmt.Errorf("no template %q", name))
 		return
 	}
+	p.User = currentUser(r)
 	var buf bytes.Buffer
 	if err := t.ExecuteTemplate(&buf, block, p); err != nil {
 		s.serverError(w, r, fmt.Errorf("render %s/%s: %w", name, block, err))
