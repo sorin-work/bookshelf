@@ -1,0 +1,89 @@
+package web
+
+import (
+	"net/http"
+	"net/url"
+	"testing"
+)
+
+func TestHealthz(t *testing.T) {
+	env := newTestEnv(t)
+	r := env.client().get("/healthz")
+	wantStatus(t, r, http.StatusOK)
+}
+
+func TestSignupLoginLogout(t *testing.T) {
+	env := newTestEnv(t)
+	c := env.client()
+
+	wantRedirect(t, c.signup("Ana Pop", "ana@example.com", "long enough"), "/")
+	wantBody(t, c.get("/"), "Ana Pop", "Log out")
+
+	wantRedirect(t, c.post("/logout", nil), "/login")
+	r := c.get("/")
+	if r.status != http.StatusOK {
+		t.Fatalf("home after logout: %d", r.status)
+	}
+	wantBody(t, r, "Sign up")
+
+	wantRedirect(t, c.login("ANA@example.com", "long enough"), "/")
+	wantBody(t, c.get("/"), "Ana Pop")
+}
+
+func TestSignupValidation(t *testing.T) {
+	env := newTestEnv(t)
+	tests := []struct {
+		name, email, password, want string
+	}{
+		{"", "a@example.com", "long enough", "Tell us your name."},
+		{"Ana", "not-an-email", "long enough", "Enter a valid email address."},
+		{"Ana", "a@example.com", "short", "Use at least 8 characters."},
+	}
+	for _, tt := range tests {
+		r := env.client().signup(tt.name, tt.email, tt.password)
+		wantStatus(t, r, http.StatusUnprocessableEntity)
+		wantBody(t, r, tt.want)
+	}
+}
+
+func TestSignupDuplicateEmail(t *testing.T) {
+	env := newTestEnv(t)
+	env.client().signup("Ana", "ana@example.com", "long enough")
+	r := env.client().signup("Other Ana", "Ana@Example.com", "long enough")
+	wantStatus(t, r, http.StatusUnprocessableEntity)
+	wantBody(t, r, "already an account")
+}
+
+func TestLoginWrongPassword(t *testing.T) {
+	env := newTestEnv(t)
+	env.client().signup("Ana", "ana@example.com", "long enough")
+	r := env.client().login("ana@example.com", "wrong password")
+	wantStatus(t, r, http.StatusUnauthorized)
+	wantBody(t, r, "don&#39;t match")
+}
+
+func TestLoginRedirectsToNext(t *testing.T) {
+	env := newTestEnv(t)
+	env.client().signup("Ana", "ana@example.com", "long enough")
+	tests := []struct{ next, want string }{
+		{"/catalogue?q=dune", "/catalogue?q=dune"},
+		{"https://evil.example/", "/"},
+		{"//evil.example/", "/"},
+		{"", "/"},
+	}
+	for _, tt := range tests {
+		c := env.client()
+		r := c.post("/login", url.Values{"email": {"ana@example.com"}, "password": {"long enough"}, "next": {tt.next}})
+		wantRedirect(t, r, tt.want)
+	}
+}
+
+func TestCSRFRequired(t *testing.T) {
+	env := newTestEnv(t)
+	c := env.client()
+	r := c.post("/signup", url.Values{
+		"csrf_token": {"forged-token-forged-token-forged-token"},
+		"name":       {"Ana"}, "email": {"ana@example.com"}, "password": {"long enough"},
+	})
+	wantStatus(t, r, http.StatusForbidden)
+}
