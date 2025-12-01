@@ -106,3 +106,14 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	}
 	http.Redirect(w, r, safeNext(f.Next), http.StatusSeeOther)
 }
+
+func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
+	if c, err := r.Cookie(sessionCookie); err == nil && c.Value != "" {
+		if err := s.store.DeleteSession(r.Context(), auth.HashToken(c.Value)); err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+	}
+	s.clearSessionCookie(w)
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}

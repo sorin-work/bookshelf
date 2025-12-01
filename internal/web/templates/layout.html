@@ -15,6 +15,10 @@
     <div class="account">
       {{if .User}}
         <span class="muted">{{.User.Name}}</span>
+        <form method="post" action="/logout" class="inline">
+          {{template "csrf" .}}
+          <button type="submit" class="link">Log out</button>
+        </form>
       {{else}}
         <a href="/login">Log in</a>
         <a class="button" href="/signup">Sign up</a>
