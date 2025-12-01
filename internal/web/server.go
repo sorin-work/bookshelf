@@ -68,7 +68,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /login", s.login)
 	mux.HandleFunc("POST /logout", s.logout)
 
-	return s.csrf(s.loadUser(mux))
+	return s.recoverPanics(s.logRequests(s.csrf(s.loadUser(mux))))
 }
 
 func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {
