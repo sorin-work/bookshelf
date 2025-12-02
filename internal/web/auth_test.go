@@ -87,3 +87,21 @@ func TestCSRFRequired(t *testing.T) {
 	})
 	wantStatus(t, r, http.StatusForbidden)
 }
+
+func TestFirstAccountIsLibrarian(t *testing.T) {
+	env := newTestEnv(t)
+	env.client().signup("First", "first@example.com", "long enough")
+	env.client().signup("Second", "second@example.com", "long enough")
+
+	first, err := env.store.UserByEmail(t.Context(), "first@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := env.store.UserByEmail(t.Context(), "second@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !first.IsLibrarian() || second.IsLibrarian() {
+		t.Errorf("roles: first %s, second %s", first.Role, second.Role)
+	}
+}

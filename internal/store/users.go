@@ -9,24 +9,41 @@ import (
 	"time"
 )
 
+type Role string
+
+const (
+	RoleLibrarian Role = "librarian"
+	RoleMember    Role = "member"
+)
+
 type User struct {
 	ID           int64
 	Email        string
 	Name         string
 	PasswordHash string
+	Role         Role
 	CreatedAt    time.Time
 }
+
+func (u User) IsLibrarian() bool { return u.Role == RoleLibrarian }
 
 type NewUser struct {
 	Email        string
 	Name         string
 	PasswordHash string
+	Role         Role
 }
 
+// CreateUser adds a user. The very first account becomes a librarian no
+// matter what role was asked for: whoever installs the app runs it.
 func (s *Store) CreateUser(ctx context.Context, u NewUser, now time.Time) (User, error) {
+	if u.Role == "" {
+		u.Role = RoleMember
+	}
 	res, err := s.db.ExecContext(ctx,
-		`INSERT INTO users (email, name, password_hash, created_at) VALUES (?, ?, ?, ?)`,
-		strings.TrimSpace(u.Email), strings.TrimSpace(u.Name), u.PasswordHash, fmtTime(now))
+		`INSERT INTO users (email, name, password_hash, role, created_at)
+		 VALUES (?, ?, ?, CASE WHEN EXISTS (SELECT 1 FROM users) THEN ? ELSE 'librarian' END, ?)`,
+		strings.TrimSpace(u.Email), strings.TrimSpace(u.Name), u.PasswordHash, string(u.Role), fmtTime(now))
 	if err != nil {
 		if isUniqueViolation(err) {
 			return User{}, ErrConflict
@@ -40,12 +57,12 @@ func (s *Store) CreateUser(ctx context.Context, u NewUser, now time.Time) (User,
 	return s.UserByID(ctx, id)
 }
 
-const userColumns = `id, email, name, password_hash, created_at`
+const userColumns = `id, email, name, password_hash, role, created_at`
 
 func scanUser(row interface{ Scan(...any) error }) (User, error) {
 	var u User
 	var created string
-	if err := row.Scan(&u.ID, &u.Email, &u.Name, &u.PasswordHash, &created); err != nil {
+	if err := row.Scan(&u.ID, &u.Email, &u.Name, &u.PasswordHash, &u.Role, &created); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return User{}, ErrNotFound
 		}

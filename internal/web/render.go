@@ -89,6 +89,25 @@ func (s *Server) serverError(w http.ResponseWriter, r *http.Request, err error) 
 	http.Error(w, "Something went wrong on our side. Please try again.", http.StatusInternalServerError)
 }
 
+func (s *Server) forbidden(w http.ResponseWriter, r *http.Request) {
+	s.render(w, r, http.StatusForbidden, "error.html", page{Title: "Not allowed", Data: errorPage{
+		Heading: "That page is for librarians",
+		Message: "Ask a librarian at the desk if you need help with this.",
+	}})
+}
+
+func (s *Server) notFound(w http.ResponseWriter, r *http.Request) {
+	s.render(w, r, http.StatusNotFound, "error.html", page{Title: "Not found", Data: errorPage{
+		Heading: "We couldn't find that page",
+		Message: "It may have been removed, or the link is wrong.",
+	}})
+}
+
+type errorPage struct {
+	Heading string
+	Message string
+}
+
 func staticHandler() http.Handler {
 	sub, err := fs.Sub(staticFiles, "static")
 	if err != nil {

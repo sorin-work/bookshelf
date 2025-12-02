@@ -95,3 +95,14 @@ func safeNext(next string) string {
 	}
 	return next
 }
+
+// requireLibrarian is requireUser plus a 403 for members.
+func (s *Server) requireLibrarian(h http.HandlerFunc) http.HandlerFunc {
+	return s.requireUser(func(w http.ResponseWriter, r *http.Request) {
+		if !currentUser(r).IsLibrarian() {
+			s.forbidden(w, r)
+			return
+		}
+		h(w, r)
+	})
+}

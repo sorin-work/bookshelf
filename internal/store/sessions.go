@@ -14,7 +14,7 @@ func (s *Store) CreateSession(ctx context.Context, tokenHash string, userID int6
 
 // SessionUser returns the user a session token hash belongs to.
 func (s *Store) SessionUser(ctx context.Context, tokenHash string) (User, error) {
-	return scanUser(s.db.QueryRowContext(ctx, `SELECT u.id, u.email, u.name, u.password_hash, u.created_at
+	return scanUser(s.db.QueryRowContext(ctx, `SELECT u.id, u.email, u.name, u.password_hash, u.role, u.created_at
 		FROM sessions s JOIN users u ON u.id = s.user_id
 		WHERE s.token_hash = ?`, tokenHash))
 }
