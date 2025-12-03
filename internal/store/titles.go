@@ -1,0 +1,261 @@
+package store
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+)
+
+type Title struct {
+	ID          int64
+	ISBN        string
+	Title       string
+	Subtitle    string
+	Publisher   string
+	Year        int
+	Description string
+	CoverURL    string
+	Authors     []string
+	Subjects    []string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+// TitleInput is what a librarian fills in. The ISBN must already be
+// normalised (or empty for books without one).
+type TitleInput struct {
+	ISBN        string
+	Title       string
+	Subtitle    string
+	Publisher   string
+	Year        int
+	Description string
+	CoverURL    string
+	Authors     []string
+	Subjects    []string
+}
+
+func nullString(s string) sql.NullString {
+	return sql.NullString{String: s, Valid: s != ""}
+}
+
+func nullInt(n int) sql.NullInt64 {
+	return sql.NullInt64{Int64: int64(n), Valid: n != 0}
+}
+
+func (s *Store) CreateTitle(ctx context.Context, in TitleInput, now time.Time) (int64, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	res, err := tx.ExecContext(ctx, `INSERT INTO titles
+		(isbn, title, subtitle, publisher, year, description, cover_url, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		nullString(in.ISBN), in.Title, in.Subtitle, in.Publisher, nullInt(in.Year),
+		in.Description, in.CoverURL, fmtTime(now), fmtTime(now))
+	if err != nil {
+		if isUniqueViolation(err) {
+			return 0, ErrConflict
+		}
+		return 0, fmt.Errorf("insert title: %w", err)
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	if err := setTitleAuthors(ctx, tx, id, in.Authors); err != nil {
+		return 0, err
+	}
+	if err := setTitleSubjects(ctx, tx, id, in.Subjects); err != nil {
+		return 0, err
+	}
+	return id, tx.Commit()
+}
+
+func (s *Store) UpdateTitle(ctx context.Context, id int64, in TitleInput, now time.Time) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	res, err := tx.ExecContext(ctx, `UPDATE titles SET
+		isbn = ?, title = ?, subtitle = ?, publisher = ?, year = ?, description = ?,
+		cover_url = ?, updated_at = ?
+		WHERE id = ?`,
+		nullString(in.ISBN), in.Title, in.Subtitle, in.Publisher, nullInt(in.Year),
+		in.Description, in.CoverURL, fmtTime(now), id)
+	if err != nil {
+		if isUniqueViolation(err) {
+			return ErrConflict
+		}
+		return fmt.Errorf("update title: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	if err := setTitleAuthors(ctx, tx, id, in.Authors); err != nil {
+		return err
+	}
+	if err := setTitleSubjects(ctx, tx, id, in.Subjects); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func setTitleAuthors(ctx context.Context, tx *sql.Tx, titleID int64, names []string) error {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM title_authors WHERE title_id = ?`, titleID); err != nil {
+		return err
+	}
+	for i, name := range names {
+		var authorID int64
+		err := tx.QueryRowContext(ctx,
+			`INSERT INTO authors (name) VALUES (?)
+			 ON CONFLICT (name) DO UPDATE SET name = authors.name
+			 RETURNING id`, name).Scan(&authorID)
+		if err != nil {
+			return fmt.Errorf("author %q: %w", name, err)
+		}
+		if _, err := tx.ExecContext(ctx,
+			`INSERT OR IGNORE INTO title_authors (title_id, author_id, position) VALUES (?, ?, ?)`,
+			titleID, authorID, i); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setTitleSubjects(ctx context.Context, tx *sql.Tx, titleID int64, names []string) error {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM title_subjects WHERE title_id = ?`, titleID); err != nil {
+		return err
+	}
+	for _, name := range names {
+		var subjectID int64
+		err := tx.QueryRowContext(ctx,
+			`INSERT INTO subjects (name) VALUES (?)
+			 ON CONFLICT (name) DO UPDATE SET name = subjects.name
+			 RETURNING id`, name).Scan(&subjectID)
+		if err != nil {
+			return fmt.Errorf("subject %q: %w", name, err)
+		}
+		if _, err := tx.ExecContext(ctx,
+			`INSERT OR IGNORE INTO title_subjects (title_id, subject_id) VALUES (?, ?)`,
+			titleID, subjectID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Store) TitleByID(ctx context.Context, id int64) (Title, error) {
+	var t Title
+	var isbn sql.NullString
+	var year sql.NullInt64
+	var created, updated string
+	err := s.db.QueryRowContext(ctx, `SELECT id, isbn, title, subtitle, publisher, year,
+		description, cover_url, created_at, updated_at FROM titles WHERE id = ?`, id).
+		Scan(&t.ID, &isbn, &t.Title, &t.Subtitle, &t.Publisher, &year,
+			&t.Description, &t.CoverURL, &created, &updated)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Title{}, ErrNotFound
+	}
+	if err != nil {
+		return Title{}, err
+	}
+	t.ISBN = isbn.String
+	t.Year = int(year.Int64)
+	t.CreatedAt, t.UpdatedAt = parseTime(created), parseTime(updated)
+
+	if t.Authors, err = s.strings(ctx, `SELECT a.name FROM title_authors ta
+		JOIN authors a ON a.id = ta.author_id WHERE ta.title_id = ? ORDER BY ta.position`, id); err != nil {
+		return Title{}, err
+	}
+	if t.Subjects, err = s.strings(ctx, `SELECT s.name FROM title_subjects ts
+		JOIN subjects s ON s.id = ts.subject_id WHERE ts.title_id = ? ORDER BY s.name`, id); err != nil {
+		return Title{}, err
+	}
+	return t, nil
+}
+
+func (s *Store) strings(ctx context.Context, query string, args ...any) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var v string
+		if err := rows.Scan(&v); err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	return out, rows.Err()
+}
+
+// TitleSummary is one row of the catalogue list.
+type TitleSummary struct {
+	ID       int64
+	Title    string
+	Subtitle string
+	Authors  string
+	Year     int
+	CoverURL string
+}
+
+type TitleFilter struct {
+	Query  string
+	Limit  int
+	Offset int
+}
+
+// ListTitles returns titles matching the filter, sorted by title, and how
+// many match in total.
+func (s *Store) ListTitles(ctx context.Context, f TitleFilter) ([]TitleSummary, int, error) {
+	if f.Limit <= 0 {
+		f.Limit = 25
+	}
+	where := ""
+	var args []any
+	if q := strings.TrimSpace(f.Query); q != "" {
+		like := "%" + q + "%"
+		where = `WHERE t.title LIKE ? OR t.subtitle LIKE ? OR t.isbn LIKE ?
+			OR EXISTS (SELECT 1 FROM title_authors ta JOIN authors a ON a.id = ta.author_id
+			           WHERE ta.title_id = t.id AND a.name LIKE ?)`
+		args = append(args, like, like, like, like)
+	}
+
+	var total int
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM titles t `+where, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := s.db.QueryContext(ctx, `SELECT t.id, t.title, t.subtitle, t.year, t.cover_url,
+		coalesce((SELECT group_concat(name, ', ') FROM (
+			SELECT a.name FROM title_authors ta JOIN authors a ON a.id = ta.author_id
+			WHERE ta.title_id = t.id ORDER BY ta.position)), '')
+		FROM titles t `+where+`
+		ORDER BY t.title COLLATE NOCASE, t.id
+		LIMIT ? OFFSET ?`, append(args, f.Limit, f.Offset)...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+	var out []TitleSummary
+	for rows.Next() {
+		var t TitleSummary
+		var year sql.NullInt64
+		if err := rows.Scan(&t.ID, &t.Title, &t.Subtitle, &year, &t.CoverURL, &t.Authors); err != nil {
+			return nil, 0, err
+		}
+		t.Year = int(year.Int64)
+		out = append(out, t)
+	}
+	return out, total, rows.Err()
+}
