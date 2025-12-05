@@ -68,6 +68,12 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /login", s.login)
 	mux.HandleFunc("POST /logout", s.logout)
 
+	mux.HandleFunc("GET /titles/new", s.requireLibrarian(s.newTitlePage))
+	mux.HandleFunc("POST /titles", s.requireLibrarian(s.createTitle))
+	mux.HandleFunc("GET /titles/{id}", s.titlePage)
+	mux.HandleFunc("GET /titles/{id}/edit", s.requireLibrarian(s.editTitlePage))
+	mux.HandleFunc("POST /titles/{id}", s.requireLibrarian(s.updateTitle))
+
 	return s.recoverPanics(s.logRequests(s.csrf(s.loadUser(mux))))
 }
 

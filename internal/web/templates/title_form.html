@@ -1,0 +1,60 @@
+{{define "content"}}
+{{$f := .Data}}
+<h1>{{if $f.ID}}Edit title{{else}}Add a title{{end}}</h1>
+<form method="post" action="{{if $f.ID}}/titles/{{$f.ID}}{{else}}/titles{{end}}" class="card form-grid" novalidate>
+  {{template "csrf" .}}
+  <div class="field">
+    <label for="isbn">ISBN</label>
+    <input id="isbn" name="isbn" value="{{$f.ISBN}}" inputmode="numeric" placeholder="978-0-14-044913-6">
+    <p class="hint">ISBN-10 or ISBN-13, hyphens are fine. Leave empty if the book has none.</p>
+    {{template "field_error" index $f.Errors "isbn"}}
+  </div>
+  <div class="field">
+    <label for="title">Title</label>
+    <input id="title" name="title" value="{{$f.Title}}" required>
+    {{template "field_error" index $f.Errors "title"}}
+  </div>
+  <div class="field">
+    <label for="subtitle">Subtitle</label>
+    <input id="subtitle" name="subtitle" value="{{$f.Subtitle}}">
+    {{template "field_error" index $f.Errors "subtitle"}}
+  </div>
+  <div class="field">
+    <label for="authors">Authors</label>
+    <textarea id="authors" name="authors" rows="3">{{$f.Authors}}</textarea>
+    <p class="hint">One per line, in the order they appear on the cover.</p>
+    {{template "field_error" index $f.Errors "authors"}}
+  </div>
+  <div class="field">
+    <label for="subjects">Subjects</label>
+    <input id="subjects" name="subjects" value="{{$f.Subjects}}" placeholder="Fantasy, Adventure">
+    <p class="hint">Separate with commas.</p>
+    {{template "field_error" index $f.Errors "subjects"}}
+  </div>
+  <div class="row">
+    <div class="field">
+      <label for="publisher">Publisher</label>
+      <input id="publisher" name="publisher" value="{{$f.Publisher}}">
+    </div>
+    <div class="field">
+      <label for="year">Year</label>
+      <input id="year" name="year" value="{{$f.Year}}" inputmode="numeric">
+      {{template "field_error" index $f.Errors "year"}}
+    </div>
+  </div>
+  <div class="field">
+    <label for="cover_url">Cover image URL</label>
+    <input id="cover_url" name="cover_url" type="url" value="{{$f.CoverURL}}">
+    {{template "field_error" index $f.Errors "cover_url"}}
+  </div>
+  <div class="field">
+    <label for="description">Description</label>
+    <textarea id="description" name="description" rows="5">{{$f.Description}}</textarea>
+    {{template "field_error" index $f.Errors "description"}}
+  </div>
+  <div class="actions">
+    <button type="submit">{{if $f.ID}}Save changes{{else}}Add title{{end}}</button>
+    <a href="{{if $f.ID}}/titles/{{$f.ID}}{{else}}/catalogue{{end}}" class="button secondary">Cancel</a>
+  </div>
+</form>
+{{end}}

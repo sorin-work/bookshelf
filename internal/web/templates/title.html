@@ -1,0 +1,21 @@
+{{define "content"}}
+{{$t := .Data}}
+<article class="title-detail">
+  <div class="cover">
+    {{if $t.CoverURL}}<img src="{{$t.CoverURL}}" alt="Cover of {{$t.Title}}" loading="lazy">{{else}}<div class="cover-placeholder" aria-hidden="true">{{$t.Title}}</div>{{end}}
+  </div>
+  <div>
+    <h1>{{$t.Title}}</h1>
+    {{with $t.Subtitle}}<p class="subtitle">{{.}}</p>{{end}}
+    {{if $t.Authors}}<p>by {{range $i, $a := $t.Authors}}{{if $i}}, {{end}}{{$a}}{{end}}</p>{{end}}
+    <dl class="facts">
+      {{with $t.ISBN}}<dt>ISBN</dt><dd>{{.}}</dd>{{end}}
+      {{with $t.Publisher}}<dt>Publisher</dt><dd>{{.}}</dd>{{end}}
+      {{with $t.Year}}<dt>Year</dt><dd>{{.}}</dd>{{end}}
+      {{if $t.Subjects}}<dt>Subjects</dt><dd>{{range $i, $s := $t.Subjects}}{{if $i}}, {{end}}{{$s}}{{end}}</dd>{{end}}
+    </dl>
+    {{with $t.Description}}<p class="description">{{.}}</p>{{end}}
+    {{if and $.User $.User.IsLibrarian}}<p><a class="button secondary" href="/titles/{{$t.ID}}/edit">Edit</a></p>{{end}}
+  </div>
+</article>
+{{end}}
