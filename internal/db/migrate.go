@@ -74,21 +74,8 @@ func migrate(ctx context.Context, conn *sql.DB, fsys fs.FS) (int, error) {
 		return 0, err
 	}
 
-	applied := map[int]bool{}
-	rows, err := conn.QueryContext(ctx, `SELECT version FROM schema_migrations`)
+	applied, err := appliedVersions(ctx, conn)
 	if err != nil {
-		return 0, err
-	}
-	for rows.Next() {
-		var v int
-		if err := rows.Scan(&v); err != nil {
-			rows.Close()
-			return 0, err
-		}
-		applied[v] = true
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
 		return 0, err
 	}
 
@@ -103,6 +90,23 @@ func migrate(ctx context.Context, conn *sql.DB, fsys fs.FS) (int, error) {
 		n++
 	}
 	return n, nil
+}
+
+func appliedVersions(ctx context.Context, conn *sql.DB) (map[int]bool, error) {
+	rows, err := conn.QueryContext(ctx, `SELECT version FROM schema_migrations`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	applied := map[int]bool{}
+	for rows.Next() {
+		var v int
+		if err := rows.Scan(&v); err != nil {
+			return nil, err
+		}
+		applied[v] = true
+	}
+	return applied, rows.Err()
 }
 
 func apply(ctx context.Context, conn *sql.DB, m migration) error {

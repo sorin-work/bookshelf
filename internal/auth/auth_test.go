@@ -41,7 +41,8 @@ func TestTokens(t *testing.T) {
 	if len(a) != 43 {
 		t.Errorf("token length %d", len(a))
 	}
-	if HashToken(a) == a || HashToken(a) != HashToken(a) || len(HashToken(a)) != 64 {
+	h := HashToken(a)
+	if h == a || h != HashToken(a) || len(h) != 64 {
 		t.Error("unexpected token hash")
 	}
 }
