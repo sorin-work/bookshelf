@@ -1,5 +1,5 @@
 {{define "content"}}
-{{$t := .Data}}
+{{$t := .Data.Title}}
 <article class="title-detail">
   <div class="cover">
     {{if $t.CoverURL}}<img src="{{$t.CoverURL}}" alt="Cover of {{$t.Title}}" loading="lazy">{{else}}<div class="cover-placeholder" aria-hidden="true">{{$t.Title}}</div>{{end}}
@@ -8,6 +8,11 @@
     <h1>{{$t.Title}}</h1>
     {{with $t.Subtitle}}<p class="subtitle">{{.}}</p>{{end}}
     {{if $t.Authors}}<p>by {{range $i, $a := $t.Authors}}{{if $i}}, {{end}}{{$a}}{{end}}</p>{{end}}
+    <p class="availability">
+      {{if .Data.Available}}<span class="badge ok">{{.Data.Available}} of {{len .Data.Copies}} on the shelf</span>
+      {{else if .Data.Copies}}<span class="badge warn">All copies are out</span>
+      {{else}}<span class="badge">No copies yet</span>{{end}}
+    </p>
     <dl class="facts">
       {{with $t.ISBN}}<dt>ISBN</dt><dd>{{.}}</dd>{{end}}
       {{with $t.Publisher}}<dt>Publisher</dt><dd>{{.}}</dd>{{end}}
@@ -18,4 +23,59 @@
     {{if and $.User $.User.IsLibrarian}}<p><a class="button secondary" href="/titles/{{$t.ID}}/edit">Edit</a></p>{{end}}
   </div>
 </article>
+
+{{if and $.User $.User.IsLibrarian}}
+<section id="copies">
+  <h2>Copies</h2>
+  {{if .Data.Copies}}
+  <table class="table">
+    <thead><tr><th>Barcode</th><th>Status</th><th>Shelf</th><th>Note</th><th></th></tr></thead>
+    <tbody>
+    {{range .Data.Copies}}
+      <tr>
+        <td><code>{{.Barcode}}</code></td>
+        <td><span class="status status-{{.Status}}">{{.Status.Label}}</span></td>
+        <td>{{.Shelf}}</td>
+        <td>{{.Note}}</td>
+        <td class="row-actions">
+          {{if eq .Status "available"}}
+            <form method="post" action="/copies/{{.ID}}/status" class="inline">{{template "csrf" $}}<input type="hidden" name="status" value="lost"><button class="link">Mark lost</button></form>
+            <form method="post" action="/copies/{{.ID}}/status" class="inline">{{template "csrf" $}}<input type="hidden" name="status" value="withdrawn"><button class="link">Withdraw</button></form>
+          {{else if or (eq .Status "lost") (eq .Status "withdrawn")}}
+            <form method="post" action="/copies/{{.ID}}/status" class="inline">{{template "csrf" $}}<input type="hidden" name="status" value="available"><button class="link">Back on the shelf</button></form>
+          {{end}}
+        </td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="muted">No copies yet. Add one below once it has a barcode label.</p>
+  {{end}}
+
+  {{$f := .Data.CopyForm}}
+  <form method="post" action="/titles/{{$t.ID}}/copies" class="card add-copy" novalidate>
+    {{template "csrf" .}}
+    <h3>Add a copy</h3>
+    <div class="row three">
+      <div class="field">
+        <label for="barcode">Barcode</label>
+        <input id="barcode" name="barcode" value="{{$f.Barcode}}" required>
+        {{template "field_error" index $f.Errors "barcode"}}
+      </div>
+      <div class="field">
+        <label for="shelf">Shelf</label>
+        <input id="shelf" name="shelf" value="{{$f.Shelf}}" placeholder="Fiction H">
+        {{template "field_error" index $f.Errors "shelf"}}
+      </div>
+      <div class="field">
+        <label for="note">Note</label>
+        <input id="note" name="note" value="{{$f.Note}}" placeholder="Donated, signed copy…">
+        {{template "field_error" index $f.Errors "note"}}
+      </div>
+    </div>
+    <button type="submit">Add copy</button>
+  </form>
+</section>
+{{end}}
 {{end}}

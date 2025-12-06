@@ -214,7 +214,7 @@ func (s *Server) titlePage(w http.ResponseWriter, r *http.Request) {
 		s.notFound(w, r)
 		return
 	}
-	t, err := s.store.TitleByID(r.Context(), id)
+	v, err := s.loadTitleView(r, id)
 	if errors.Is(err, store.ErrNotFound) {
 		s.notFound(w, r)
 		return
@@ -223,5 +223,5 @@ func (s *Server) titlePage(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "title.html", page{Title: t.Title, Data: t})
+	s.render(w, r, http.StatusOK, "title.html", page{Title: v.Title.Title, Data: v})
 }

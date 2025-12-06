@@ -153,3 +153,25 @@ button.link {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+.row.three { grid-template-columns: 1fr 1fr 2fr; }
+h3 { margin: 0 0 0.75rem; font-size: 1.05rem; }
+.add-copy { margin-top: 1rem; }
+
+.table { width: 100%; border-collapse: collapse; background: var(--surface); }
+.table th, .table td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
+.table th { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+.row-actions { text-align: right; white-space: nowrap; }
+.row-actions form + form { margin-left: 0.75rem; }
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  background: var(--border);
+}
+.badge.ok { background: #e3f1e5; color: var(--ok); }
+.badge.warn { background: #f6ecd6; color: var(--warning); }
+.status-lost, .status-withdrawn { color: var(--danger); }
+.status-on_loan { color: var(--warning); }

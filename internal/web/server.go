@@ -74,6 +74,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /titles/{id}", s.titlePage)
 	mux.HandleFunc("GET /titles/{id}/edit", s.requireLibrarian(s.editTitlePage))
 	mux.HandleFunc("POST /titles/{id}", s.requireLibrarian(s.updateTitle))
+	mux.HandleFunc("POST /titles/{id}/copies", s.requireLibrarian(s.addCopy))
+	mux.HandleFunc("POST /copies/{id}/status", s.requireLibrarian(s.setCopyStatus))
 
 	return s.recoverPanics(s.logRequests(s.csrf(s.loadUser(mux))))
 }
