@@ -207,6 +207,10 @@ type TitleSummary struct {
 	Authors  string
 	Year     int
 	CoverURL string
+	// Copies counts every copy that is not withdrawn; Available only the
+	// ones on the shelf.
+	Copies    int
+	Available int
 }
 
 type TitleFilter struct {
@@ -239,7 +243,9 @@ func (s *Store) ListTitles(ctx context.Context, f TitleFilter) ([]TitleSummary, 
 	rows, err := s.db.QueryContext(ctx, `SELECT t.id, t.title, t.subtitle, t.year, t.cover_url,
 		coalesce((SELECT group_concat(name, ', ') FROM (
 			SELECT a.name FROM title_authors ta JOIN authors a ON a.id = ta.author_id
-			WHERE ta.title_id = t.id ORDER BY ta.position)), '')
+			WHERE ta.title_id = t.id ORDER BY ta.position)), ''),
+		(SELECT count(*) FROM copies c WHERE c.title_id = t.id AND c.status != 'withdrawn'),
+		(SELECT count(*) FROM copies c WHERE c.title_id = t.id AND c.status = 'available')
 		FROM titles t `+where+`
 		ORDER BY t.title COLLATE NOCASE, t.id
 		LIMIT ? OFFSET ?`, append(args, f.Limit, f.Offset)...)
@@ -251,7 +257,7 @@ func (s *Store) ListTitles(ctx context.Context, f TitleFilter) ([]TitleSummary, 
 	for rows.Next() {
 		var t TitleSummary
 		var year sql.NullInt64
-		if err := rows.Scan(&t.ID, &t.Title, &t.Subtitle, &year, &t.CoverURL, &t.Authors); err != nil {
+		if err := rows.Scan(&t.ID, &t.Title, &t.Subtitle, &year, &t.CoverURL, &t.Authors, &t.Copies, &t.Available); err != nil {
 			return nil, 0, err
 		}
 		t.Year = int(year.Int64)
