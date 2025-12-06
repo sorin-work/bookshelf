@@ -1,0 +1,124 @@
+package web
+
+import (
+	"net/http"
+	"net/url"
+	"strings"
+	"testing"
+)
+
+// librarian signs up the first account, which makes it the librarian.
+func (e *testEnv) librarian() *client {
+	e.t.Helper()
+	c := e.client()
+	wantRedirect(e.t, c.signup("Lena Librarian", "lena@example.com", "long enough"), "/")
+	return c
+}
+
+func (e *testEnv) member(name, email string) *client {
+	e.t.Helper()
+	c := e.client()
+	wantRedirect(e.t, c.signup(name, email, "long enough"), "/")
+	return c
+}
+
+func titleValues(kv ...string) url.Values {
+	v := url.Values{}
+	for i := 0; i+1 < len(kv); i += 2 {
+		v.Set(kv[i], kv[i+1])
+	}
+	return v
+}
+
+func (c *client) addTitle(kv ...string) string {
+	c.env.t.Helper()
+	r := c.post("/titles", titleValues(kv...))
+	if r.status != http.StatusSeeOther || !strings.HasPrefix(r.location, "/titles/") {
+		c.env.t.Fatalf("add title: %d %s\n%s", r.status, r.location, r.body)
+	}
+	return r.location
+}
+
+func TestAddAndEditTitle(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+
+	loc := lib.addTitle("title", "The Left Hand of Darkness", "isbn", "0-441-47812-3",
+		"authors", "Ursula K. Le Guin", "subjects", "Science fiction, Classics", "year", "1969")
+	r := lib.get(loc)
+	wantStatus(t, r, http.StatusOK)
+	wantBody(t, r, "The Left Hand of Darkness", "9780441478125", "Ursula K. Le Guin", "Classics, Science fiction")
+
+	r = lib.post(loc, titleValues("title", "The Left Hand of Darkness", "isbn", "9780441478125",
+		"subtitle", "50th anniversary edition", "authors", "Ursula K. Le Guin"))
+	wantRedirect(t, r, loc)
+	wantBody(t, lib.get(loc), "50th anniversary edition")
+}
+
+func TestTitleValidation(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	lib.addTitle("title", "Dune", "isbn", "9780441172719")
+
+	tests := []struct {
+		name string
+		form url.Values
+		want string
+	}{
+		{"missing title", titleValues("isbn", "9780441172719"), "A title is required."},
+		{"bad isbn", titleValues("title", "X", "isbn", "978-0-441-17271-0"), "check digit does not match"},
+		{"duplicate isbn", titleValues("title", "Dune", "isbn", "0441172717"), "already in the catalogue"},
+		{"bad year", titleValues("title", "X", "year", "3000"), "Enter a year between 1450"},
+		{"bad cover", titleValues("title", "X", "cover_url", "javascript:alert(1)"), "starting with https://"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := lib.post("/titles", tt.form)
+			wantStatus(t, r, http.StatusUnprocessableEntity)
+			wantBody(t, r, tt.want)
+		})
+	}
+}
+
+func TestMembersCannotEditCatalogue(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	loc := lib.addTitle("title", "Dune")
+	m := env.member("Mo Member", "mo@example.com")
+
+	wantStatus(t, m.get("/titles/new"), http.StatusForbidden)
+	wantStatus(t, m.post("/titles", titleValues("title", "Sneaky")), http.StatusForbidden)
+	wantStatus(t, m.post(loc+"/copies", titleValues("barcode", "B001")), http.StatusForbidden)
+
+	// Anonymous visitors are sent to log in.
+	r := env.client().get("/titles/new")
+	wantRedirect(t, r, "/login?next=%2Ftitles%2Fnew")
+
+	// Everyone can read the catalogue.
+	wantBody(t, env.client().get("/catalogue"), "Dune")
+	wantStatus(t, m.get(loc), http.StatusOK)
+}
+
+func TestCopies(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	loc := lib.addTitle("title", "Matilda")
+
+	wantRedirect(t, lib.post(loc+"/copies", titleValues("barcode", " b-0001 ", "shelf", "Children D")), loc+"#copies")
+	wantRedirect(t, lib.post(loc+"/copies", titleValues("barcode", "B-0002")), loc+"#copies")
+
+	r := lib.post(loc+"/copies", titleValues("barcode", "b-0001"))
+	wantStatus(t, r, http.StatusUnprocessableEntity)
+	wantBody(t, r, "Another copy already has this barcode.")
+
+	r = lib.get(loc)
+	wantBody(t, r, "B-0001", "Children D", "2 of 2 on the shelf")
+
+	c, err := env.store.CopyByBarcode(t.Context(), "B-0002")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRedirect(t, lib.post("/copies/"+itoa(c.ID)+"/status", titleValues("status", "lost")), loc+"#copies")
+	wantBody(t, lib.get(loc), "1 of 2 on the shelf", "Lost")
+	wantBody(t, lib.get("/catalogue"), "1 available")
+}
