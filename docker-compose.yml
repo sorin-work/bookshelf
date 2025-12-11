@@ -1,0 +1,23 @@
+name: bookshelf
+
+services:
+  app:
+    build: .
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Leave false for plain http on localhost; set true behind https.
+      SECURE_COOKIES: ${SECURE_COOKIES:-false}
+    volumes:
+      - bookshelf-data:/data
+    ports:
+      - '${APP_PORT:-4409}:4409'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:4409/healthz > /dev/null || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  bookshelf-data:
