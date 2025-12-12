@@ -56,7 +56,12 @@ func (s *Server) signup(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
-	u, err := s.store.CreateUser(r.Context(), store.NewUser{Email: f.Email, Name: f.Name, PasswordHash: hash}, s.now())
+	u, err := s.store.CreateUser(r.Context(), store.NewUser{
+		Email:        f.Email,
+		Name:         f.Name,
+		PasswordHash: hash,
+		CardExpires:  s.today().AddYears(1),
+	}, s.now())
 	if errors.Is(err, store.ErrConflict) {
 		f.Errors["email"] = "There is already an account with this email. Log in instead?"
 		s.render(w, r, http.StatusUnprocessableEntity, "signup.html", page{Title: "Sign up", Data: f})

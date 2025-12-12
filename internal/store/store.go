@@ -34,3 +34,21 @@ func parseTime(s string) time.Time {
 	t, _ := time.Parse(time.RFC3339, s)
 	return t
 }
+
+// ids runs a query that selects a single integer column.
+func (s *Store) ids(ctx context.Context, query string, args ...any) ([]int64, error) {
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
+}

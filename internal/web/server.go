@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sorin-work/bookshelf/internal/domain"
 	"github.com/sorin-work/bookshelf/internal/store"
 )
 
@@ -78,6 +79,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /copies/{id}/status", s.requireLibrarian(s.setCopyStatus))
 
 	return s.recoverPanics(s.logRequests(s.csrf(s.loadUser(mux))))
+}
+
+// today is the current calendar day.
+func (s *Server) today() domain.Date {
+	return domain.DateOf(s.now())
 }
 
 func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {

@@ -14,6 +14,7 @@ import (
 
 	"github.com/sorin-work/bookshelf/internal/config"
 	"github.com/sorin-work/bookshelf/internal/db"
+	"github.com/sorin-work/bookshelf/internal/domain"
 	"github.com/sorin-work/bookshelf/internal/store"
 	"github.com/sorin-work/bookshelf/internal/web"
 )
@@ -48,8 +49,15 @@ func run() error {
 	}
 	log.Info("database ready", "path", cfg.DBPath, "migrations_applied", applied)
 
+	st := store.New(conn)
+	if n, err := st.EnsureCards(ctx, domain.DateOf(time.Now()).AddYears(1)); err != nil {
+		return fmt.Errorf("issue library cards: %w", err)
+	} else if n > 0 {
+		log.Info("issued library cards to existing accounts", "count", n)
+	}
+
 	app, err := web.New(web.Options{
-		Store:         store.New(conn),
+		Store:         st,
 		Logger:        log,
 		SecureCookies: cfg.SecureCookies,
 		SessionTTL:    cfg.SessionTTL,
