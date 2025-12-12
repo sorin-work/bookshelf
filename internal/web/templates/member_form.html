@@ -1,0 +1,36 @@
+{{define "content"}}
+{{$f := .Data}}
+<div class="narrow wide">
+  <h1>{{if $f.ID}}Edit member{{else}}Register a member{{end}}</h1>
+  <form method="post" action="{{if $f.ID}}/members/{{$f.ID}}{{else}}/members{{end}}" class="card" novalidate>
+    {{template "csrf" .}}
+    <div class="field">
+      <label for="name">Name</label>
+      <input id="name" name="name" value="{{$f.Name}}" required>
+      {{template "field_error" index $f.Errors "name"}}
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" value="{{$f.Email}}" required>
+      {{template "field_error" index $f.Errors "email"}}
+    </div>
+    <div class="field">
+      <label for="phone">Phone</label>
+      <input id="phone" name="phone" type="tel" value="{{$f.Phone}}">
+      {{template "field_error" index $f.Errors "phone"}}
+    </div>
+    {{if not $f.ID}}
+    <div class="field">
+      <label for="password">Password <span class="muted">(optional)</span></label>
+      <input id="password" name="password" type="password" autocomplete="new-password">
+      <p class="hint">Only needed if they want to search and place holds online.</p>
+      {{template "field_error" index $f.Errors "password"}}
+    </div>
+    {{end}}
+    <div class="actions">
+      <button type="submit">{{if $f.ID}}Save changes{{else}}Register and issue card{{end}}</button>
+      <a class="button secondary" href="{{if $f.ID}}/members/{{$f.ID}}{{else}}/members{{end}}">Cancel</a>
+    </div>
+  </form>
+</div>
+{{end}}

@@ -175,3 +175,11 @@ h3 { margin: 0 0 0.75rem; font-size: 1.05rem; }
 .badge.warn { background: #f6ecd6; color: var(--warning); }
 .status-lost, .status-withdrawn { color: var(--danger); }
 .status-on_loan { color: var(--warning); }
+
+.narrow.wide { max-width: 34rem; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.library-card { background: linear-gradient(135deg, #2f5d50, #3f7a68); color: #fff; border: none; }
+.library-card .muted { color: rgba(255, 255, 255, 0.75); }
+.library-card .card-number { font-family: ui-monospace, monospace; font-size: 1.5rem; letter-spacing: 0.08em; margin: 0.25rem 0; }
+.library-card button.secondary { color: #fff; border-color: rgba(255, 255, 255, 0.6); }
+.library-card .badge.warn { background: #f6ecd6; }

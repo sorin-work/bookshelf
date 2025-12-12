@@ -78,6 +78,15 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /titles/{id}/copies", s.requireLibrarian(s.addCopy))
 	mux.HandleFunc("POST /copies/{id}/status", s.requireLibrarian(s.setCopyStatus))
 
+	mux.HandleFunc("GET /members", s.requireLibrarian(s.members))
+	mux.HandleFunc("GET /members/new", s.requireLibrarian(s.newMemberPage))
+	mux.HandleFunc("POST /members", s.requireLibrarian(s.createMember))
+	mux.HandleFunc("GET /members/{id}", s.requireLibrarian(s.memberPage))
+	mux.HandleFunc("GET /members/{id}/edit", s.requireLibrarian(s.editMemberPage))
+	mux.HandleFunc("POST /members/{id}", s.requireLibrarian(s.updateMember))
+	mux.HandleFunc("POST /members/{id}/renew-card", s.requireLibrarian(s.renewCard))
+	mux.HandleFunc("POST /members/{id}/role", s.requireLibrarian(s.setRole))
+
 	return s.recoverPanics(s.logRequests(s.csrf(s.loadUser(mux))))
 }
 

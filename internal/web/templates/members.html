@@ -1,0 +1,34 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="page-head">
+  <h1>Members</h1>
+  <a class="button" href="/members/new">Register a member</a>
+</div>
+<form method="get" action="/members" class="search" role="search">
+  <label for="q" class="visually-hidden">Search members</label>
+  <input id="q" name="q" type="search" value="{{$d.Query}}" placeholder="Name, email or card number">
+  <button type="submit">Search</button>
+</form>
+{{if $d.Members}}
+<table class="table">
+  <thead><tr><th>Name</th><th>Card</th><th>Email</th><th>Card expires</th><th>Role</th></tr></thead>
+  <tbody>
+  {{range $d.Members}}
+    <tr>
+      <td><a href="/members/{{.ID}}">{{.Name}}</a></td>
+      <td><code>{{.FormattedCard}}</code></td>
+      <td>{{.Email}}</td>
+      <td>{{.CardExpires.Format "2 Jan 2006"}}</td>
+      <td>{{if .IsLibrarian}}Librarian{{else}}Member{{end}}</td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+<nav class="pager" aria-label="Pages">
+  {{with $d.PrevURL}}<a href="{{.}}">← Previous</a>{{end}}
+  {{with $d.NextURL}}<a href="{{.}}">Next →</a>{{end}}
+</nav>
+{{else}}
+<p class="empty">{{if $d.Query}}No one matches “{{$d.Query}}”.{{else}}No members yet.{{end}}</p>
+{{end}}
+{{end}}

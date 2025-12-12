@@ -1,0 +1,38 @@
+{{define "content"}}
+{{$m := .Data.Member}}
+<div class="page-head">
+  <h1>{{$m.Name}}</h1>
+  <a class="button secondary" href="/members/{{$m.ID}}/edit">Edit</a>
+</div>
+<div class="grid-2">
+  <section class="card library-card">
+    <p class="muted">Library card</p>
+    <p class="card-number">{{$m.FormattedCard}}</p>
+    <p>
+      {{if .Data.CardExpired}}<span class="badge warn">Expired {{$m.CardExpires.Format "2 Jan 2006"}}</span>
+      {{else}}Valid until {{$m.CardExpires.Format "2 Jan 2006"}}{{end}}
+    </p>
+    <form method="post" action="/members/{{$m.ID}}/renew-card" class="inline">
+      {{template "csrf" $}}
+      <button type="submit" class="secondary">Renew card for a year</button>
+    </form>
+  </section>
+  <section class="card">
+    <dl class="facts">
+      <dt>Email</dt><dd>{{$m.Email}}</dd>
+      {{with $m.Phone}}<dt>Phone</dt><dd>{{.}}</dd>{{end}}
+      <dt>Role</dt><dd>{{if $m.IsLibrarian}}Librarian{{else}}Member{{end}}</dd>
+      <dt>Online access</dt><dd>{{if $m.CanLogIn}}Yes{{else}}No password set{{end}}</dd>
+      <dt>Joined</dt><dd>{{date $m.CreatedAt}}</dd>
+    </dl>
+    <form method="post" action="/members/{{$m.ID}}/role" class="inline">
+      {{template "csrf" $}}
+      {{if $m.IsLibrarian}}
+        <input type="hidden" name="role" value="member"><button type="submit" class="link">Make a regular member</button>
+      {{else}}
+        <input type="hidden" name="role" value="librarian"><button type="submit" class="link">Make a librarian</button>
+      {{end}}
+    </form>
+  </section>
+</div>
+{{end}}

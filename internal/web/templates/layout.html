@@ -11,6 +11,9 @@
     <a class="brand" href="/">Bookshelf</a>
     <nav class="nav">
       <a href="/catalogue">Catalogue</a>
+      {{if and .User .User.IsLibrarian}}
+        <a href="/members">Members</a>
+      {{end}}
     </nav>
     <div class="account">
       {{if .User}}
