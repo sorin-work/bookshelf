@@ -13,6 +13,14 @@ var (
 	ErrConflict = errors.New("already exists")
 )
 
+// querier is satisfied by both *sql.DB and *sql.Tx, so lookups can be
+// shared between plain reads and transactions.
+type querier interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
 type Store struct {
 	db *sql.DB
 }
@@ -23,6 +31,19 @@ func New(db *sql.DB) *Store {
 
 func (s *Store) Ping(ctx context.Context) error {
 	return s.db.PingContext(ctx)
+}
+
+// inTx runs fn in a transaction and commits it if fn returns nil.
+func (s *Store) inTx(ctx context.Context, fn func(tx *sql.Tx) error) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	if err := fn(tx); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // Timestamps are stored as RFC 3339 text in UTC so they sort correctly.
