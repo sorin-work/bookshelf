@@ -1,0 +1,24 @@
+{{define "loan_table"}}
+{{if .Loans}}
+<table class="table">
+  <thead><tr><th>Title</th><th>Copy</th><th>Due</th><th>Renewals</th><th></th></tr></thead>
+  <tbody>
+  {{range .Loans}}
+    <tr{{if .Overdue}} class="overdue"{{end}}>
+      <td><a href="/titles/{{.TitleID}}">{{.Title}}</a></td>
+      <td><code>{{.Barcode}}</code></td>
+      <td>{{.Due.Format "Mon 2 Jan"}}{{if .Overdue}} <span class="badge warn">{{.DaysOverdue}} {{if eq .DaysOverdue 1}}day{{else}}days{{end}} late</span>{{end}}</td>
+      <td>{{.Renewals}}</td>
+      <td class="row-actions">
+        {{if .CanRenew}}
+          <form method="post" action="/loans/{{.ID}}/renew" class="inline">{{template "csrf" $.Page}}<button type="submit" class="link">Renew</button></form>
+        {{else}}<span class="muted">{{.WhyNot}}</span>{{end}}
+      </td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="muted">{{.Empty}}</p>
+{{end}}
+{{end}}

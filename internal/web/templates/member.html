@@ -35,4 +35,26 @@
     </form>
   </section>
 </div>
+
+<section>
+  <div class="page-head">
+    <h2>On loan</h2>
+    <a class="button secondary" href="/desk?card={{$m.CardNumber}}">Check out to {{$m.Name}}</a>
+  </div>
+  {{template "loan_table" args "Page" $ "Loans" .Data.Loans "Empty" "Nothing on loan right now."}}
+</section>
+
+{{if .Data.History}}
+<section>
+  <h2>Recently returned</h2>
+  <table class="table">
+    <thead><tr><th>Title</th><th>Borrowed</th><th>Returned</th></tr></thead>
+    <tbody>
+    {{range .Data.History}}
+      <tr><td><a href="/titles/{{.TitleID}}">{{.Title}}</a></td><td>{{date .CheckedOutAt}}</td><td>{{date .ReturnedAt}}</td></tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{end}}
 {{end}}

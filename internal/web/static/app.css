@@ -187,3 +187,5 @@ h3 { margin: 0 0 0.75rem; font-size: 1.05rem; }
 .alert p { margin: 0; }
 .alert p + p { margin-top: 0.25rem; }
 #desk-result:empty { display: none; }
+
+tr.overdue td { background: #fbf3e4; }

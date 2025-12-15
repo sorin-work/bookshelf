@@ -151,6 +151,8 @@ func (s *Server) memberFromPath(w http.ResponseWriter, r *http.Request) (store.U
 type memberView struct {
 	Member      store.User
 	CardExpired bool
+	Loans       []loanLine
+	History     []store.LoanRow
 }
 
 func (s *Server) memberPage(w http.ResponseWriter, r *http.Request) {
@@ -159,6 +161,19 @@ func (s *Server) memberPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	v := memberView{Member: m, CardExpired: m.CardExpired(s.today())}
+	active, err := s.store.ActiveLoans(r.Context(), m.ID)
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	if v.Loans, err = s.loanLines(r, active); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	if v.History, err = s.store.LoanHistory(r.Context(), m.ID, 20); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
 	s.render(w, r, http.StatusOK, "member.html", page{Title: m.Name, Data: v})
 }
 

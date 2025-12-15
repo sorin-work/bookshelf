@@ -81,6 +81,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /desk", s.requireLibrarian(s.desk))
 	mux.HandleFunc("POST /desk/checkout", s.requireLibrarian(s.deskCheckout))
 	mux.HandleFunc("POST /desk/return", s.requireLibrarian(s.deskReturn))
+	mux.HandleFunc("POST /loans/{id}/renew", s.requireUser(s.renewLoan))
 
 	mux.HandleFunc("GET /members", s.requireLibrarian(s.members))
 	mux.HandleFunc("GET /members/new", s.requireLibrarian(s.newMemberPage))
