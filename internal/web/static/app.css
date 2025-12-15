@@ -183,3 +183,7 @@ h3 { margin: 0 0 0.75rem; font-size: 1.05rem; }
 .library-card .card-number { font-family: ui-monospace, monospace; font-size: 1.5rem; letter-spacing: 0.08em; margin: 0.25rem 0; }
 .library-card button.secondary { color: #fff; border-color: rgba(255, 255, 255, 0.6); }
 .library-card .badge.warn { background: #f6ecd6; }
+
+.alert p { margin: 0; }
+.alert p + p { margin-top: 0.25rem; }
+#desk-result:empty { display: none; }

@@ -1,0 +1,39 @@
+{{define "content"}}
+<h1>Circulation desk</h1>
+<div id="desk-result" aria-live="polite">{{template "desk_result" .}}</div>
+<div class="grid-2">
+  <form method="post" action="/desk/checkout" class="card"
+        hx-post="/desk/checkout" hx-target="#desk-result" hx-on::after-request="if(event.detail.successful) this.barcode.value=''; this.barcode.focus()">
+    {{template "csrf" .}}
+    <h2>Check out</h2>
+    <div class="field">
+      <label for="card">Library card</label>
+      <input id="card" name="card" value="{{.Data.Card}}" inputmode="numeric" autocomplete="off" required>
+    </div>
+    <div class="field">
+      <label for="checkout-barcode">Copy barcode</label>
+      <input id="checkout-barcode" name="barcode" autocomplete="off" required>
+    </div>
+    <button type="submit">Check out</button>
+  </form>
+  <form method="post" action="/desk/return" class="card"
+        hx-post="/desk/return" hx-target="#desk-result" hx-on::after-request="this.barcode.value=''; this.barcode.focus()">
+    {{template "csrf" .}}
+    <h2>Check in</h2>
+    <div class="field">
+      <label for="return-barcode">Copy barcode</label>
+      <input id="return-barcode" name="barcode" autocomplete="off" required>
+    </div>
+    <button type="submit">Check in</button>
+  </form>
+</div>
+{{end}}
+
+{{define "desk_result"}}
+{{with .Data.Result}}
+  <div class="alert {{if .OK}}ok{{else}}error{{end}}">
+    <p>{{.Message}}</p>
+    {{with .Loan}}{{if not .Returned}}<p><strong>Due {{.Due.Format "Mon 2 Jan"}}</strong> · copy {{.Barcode}}</p>{{end}}{{end}}
+  </div>
+{{end}}
+{{end}}
