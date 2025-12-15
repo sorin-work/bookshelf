@@ -69,6 +69,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /login", s.login)
 	mux.HandleFunc("POST /logout", s.logout)
 
+	mux.HandleFunc("GET /account", s.requireUser(s.account))
 	mux.HandleFunc("GET /catalogue", s.catalogue)
 	mux.HandleFunc("GET /titles/new", s.requireLibrarian(s.newTitlePage))
 	mux.HandleFunc("POST /titles", s.requireLibrarian(s.createTitle))

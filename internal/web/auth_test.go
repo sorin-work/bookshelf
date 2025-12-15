@@ -17,7 +17,7 @@ func TestSignupLoginLogout(t *testing.T) {
 	c := env.client()
 
 	wantRedirect(t, c.signup("Ana Pop", "ana@example.com", "long enough"), "/")
-	wantBody(t, c.get("/"), "Ana Pop", "Log out")
+	wantBody(t, c.get("/"), "My account", "Log out")
 
 	wantRedirect(t, c.post("/logout", nil), "/login")
 	r := c.get("/")
@@ -27,7 +27,7 @@ func TestSignupLoginLogout(t *testing.T) {
 	wantBody(t, r, "Sign up")
 
 	wantRedirect(t, c.login("ANA@example.com", "long enough"), "/")
-	wantBody(t, c.get("/"), "Ana Pop")
+	wantBody(t, c.get("/account"), "Hello, Ana Pop")
 }
 
 func TestSignupValidation(t *testing.T) {

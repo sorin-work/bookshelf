@@ -1,0 +1,30 @@
+{{define "content"}}
+<h1>Hello, {{.User.Name}}</h1>
+<div class="grid-2">
+  <section class="card library-card">
+    <p class="muted">Library card</p>
+    <p class="card-number">{{.User.FormattedCard}}</p>
+    <p>{{if .Data.CardExpired}}<span class="badge warn">Expired {{.User.CardExpires.Format "2 Jan 2006"}}</span> Ask at the desk to renew it.
+       {{else}}Valid until {{.User.CardExpires.Format "2 Jan 2006"}}{{end}}</p>
+  </section>
+  <section class="card">
+    <p class="big-number">{{len .Data.Loans}}</p>
+    <p class="muted">{{if eq (len .Data.Loans) 1}}item{{else}}items{{end}} on loan</p>
+    <p><a href="/catalogue">Find something to read →</a></p>
+  </section>
+</div>
+
+<section>
+  <h2>On loan</h2>
+  {{template "loan_table" args "Page" $ "Loans" .Data.Loans "Empty" "You have nothing out at the moment."}}
+</section>
+
+{{if .Data.History}}
+<section>
+  <h2>Recently returned</h2>
+  <ul class="plain">
+    {{range .Data.History}}<li><a href="/titles/{{.TitleID}}">{{.Title}}</a> <span class="muted">returned {{date .ReturnedAt}}</span></li>{{end}}
+  </ul>
+</section>
+{{end}}
+{{end}}

@@ -21,7 +21,7 @@
     </nav>
     <div class="account">
       {{if .User}}
-        <span class="muted">{{.User.Name}}</span>
+        <a href="/account">My account</a>
         <form method="post" action="/logout" class="inline">
           {{template "csrf" .}}
           <button type="submit" class="link">Log out</button>

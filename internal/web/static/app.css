@@ -189,3 +189,7 @@ h3 { margin: 0 0 0.75rem; font-size: 1.05rem; }
 #desk-result:empty { display: none; }
 
 tr.overdue td { background: #fbf3e4; }
+
+.big-number { font-size: 2.2rem; font-weight: 700; margin: 0; }
+ul.plain { list-style: none; padding: 0; }
+ul.plain li { padding: 0.3rem 0; }
