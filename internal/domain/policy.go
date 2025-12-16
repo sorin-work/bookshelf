@@ -65,7 +65,9 @@ func (p Policy) IsOpen(d Date) bool {
 // library is closed then.
 func (p Policy) DueDate(from Date) Date {
 	due := from.AddDays(p.LoanDays)
-	if !p.IsOpen(due) {
+	// Validate guarantees one open day a week; the bound only protects
+	// against a policy that skipped validation.
+	for i := 0; i < 7 && !p.IsOpen(due); i++ {
 		due = due.AddDays(1)
 	}
 	return due

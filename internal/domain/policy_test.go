@@ -36,6 +36,27 @@ func TestDueDate(t *testing.T) {
 	}
 }
 
+func TestDueDateSkipsSeveralClosedDays(t *testing.T) {
+	p := DefaultPolicy()
+	p.LoanDays = 14
+	p.ClosedDays = []time.Weekday{time.Saturday, time.Sunday, time.Monday}
+
+	tests := []struct {
+		from, want string
+	}{
+		{"2026-03-07", "2026-03-24"}, // Saturday -> Saturday, skip to Tuesday
+		{"2026-03-08", "2026-03-24"}, // Sunday -> Sunday
+		{"2026-03-09", "2026-03-24"}, // Monday -> Monday
+		{"2026-03-10", "2026-03-24"}, // Tuesday -> Tuesday
+	}
+	for _, tt := range tests {
+		got := p.DueDate(mustDate(t, tt.from))
+		if got.String() != tt.want {
+			t.Errorf("DueDate(%s) = %s (%s), want %s", tt.from, got, got.Weekday(), tt.want)
+		}
+	}
+}
+
 func TestPolicyValidate(t *testing.T) {
 	if err := DefaultPolicy().Validate(); err != nil {
 		t.Errorf("default policy: %v", err)
