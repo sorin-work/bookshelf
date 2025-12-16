@@ -1,0 +1,41 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="narrow wide">
+  <h1>Lending rules</h1>
+  {{if $d.Saved}}<p class="alert ok">Saved. New checkouts and renewals use these rules; existing due dates don't change.</p>{{end}}
+  <form method="post" action="/settings" class="card" novalidate>
+    {{template "csrf" .}}
+    {{with index $d.Errors "form"}}<p class="alert error">{{.}}</p>{{end}}
+    <fieldset>
+      <legend>Loans</legend>
+      <div class="row">
+        <div class="field">
+          <label for="loan_days">Loan period (days)</label>
+          <input id="loan_days" name="loan_days" inputmode="numeric" value="{{index $d.Values "loan_days"}}">
+          {{template "field_error" index $d.Errors "loan_days"}}
+        </div>
+        <div class="field">
+          <label for="max_loans">Items per member</label>
+          <input id="max_loans" name="max_loans" inputmode="numeric" value="{{index $d.Values "max_loans"}}">
+          {{template "field_error" index $d.Errors "max_loans"}}
+        </div>
+      </div>
+      <div class="field">
+        <label for="max_renewals">Renewals per loan</label>
+        <input id="max_renewals" name="max_renewals" inputmode="numeric" value="{{index $d.Values "max_renewals"}}">
+        {{template "field_error" index $d.Errors "max_renewals"}}
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Closed on</legend>
+      <p class="hint">Nothing falls due on a day the library is closed.</p>
+      <div class="checkboxes">
+      {{range $d.Weekdays}}
+        <label><input type="checkbox" name="closed" value="{{.Day}}"{{if .Closed}} checked{{end}}> {{.Name}}</label>
+      {{end}}
+      </div>
+    </fieldset>
+    <button type="submit">Save rules</button>
+  </form>
+</div>
+{{end}}

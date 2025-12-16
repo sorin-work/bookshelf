@@ -193,3 +193,9 @@ tr.overdue td { background: #fbf3e4; }
 .big-number { font-size: 2.2rem; font-weight: 700; margin: 0; }
 ul.plain { list-style: none; padding: 0; }
 ul.plain li { padding: 0.3rem 0; }
+
+fieldset { border: none; padding: 0; margin: 0 0 1.25rem; }
+legend { font-weight: 700; margin-bottom: 0.5rem; }
+.checkboxes { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+.checkboxes label { font-weight: normal; display: flex; gap: 0.35rem; align-items: center; }
+.checkboxes input { width: auto; }
