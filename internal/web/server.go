@@ -18,6 +18,8 @@ type Options struct {
 	Logger        *slog.Logger
 	SecureCookies bool
 	SessionTTL    time.Duration
+	// Location is the library's time zone; defaults to UTC.
+	Location *time.Location
 	// Now returns the current time; tests replace it.
 	Now func() time.Time
 }
@@ -27,6 +29,7 @@ type Server struct {
 	log           *slog.Logger
 	secureCookies bool
 	sessionTTL    time.Duration
+	loc           *time.Location
 	now           func() time.Time
 	pages         map[string]*template.Template
 }
@@ -37,7 +40,11 @@ func New(o Options) (*Server, error) {
 		log:           o.Logger,
 		secureCookies: o.SecureCookies,
 		sessionTTL:    o.SessionTTL,
+		loc:           o.Location,
 		now:           o.Now,
+	}
+	if s.loc == nil {
+		s.loc = time.UTC
 	}
 	if s.log == nil {
 		s.log = slog.Default()
@@ -99,9 +106,9 @@ func (s *Server) Handler() http.Handler {
 	return s.recoverPanics(s.logRequests(s.csrf(s.loadUser(mux))))
 }
 
-// today is the current calendar day.
+// today is the current calendar day at the library.
 func (s *Server) today() domain.Date {
-	return domain.DateOf(s.now())
+	return domain.DateOf(s.now().In(s.loc))
 }
 
 func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {

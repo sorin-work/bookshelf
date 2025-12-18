@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata" // embedded zone database, so LIBRARY_TIMEZONE works anywhere
 
 	"github.com/sorin-work/bookshelf/internal/config"
 	"github.com/sorin-work/bookshelf/internal/db"
@@ -50,7 +51,7 @@ func run() error {
 	log.Info("database ready", "path", cfg.DBPath, "migrations_applied", applied)
 
 	st := store.New(conn)
-	if n, err := st.EnsureCards(ctx, domain.DateOf(time.Now()).AddYears(1)); err != nil {
+	if n, err := st.EnsureCards(ctx, domain.DateOf(time.Now().In(cfg.Location)).AddYears(1)); err != nil {
 		return fmt.Errorf("issue library cards: %w", err)
 	} else if n > 0 {
 		log.Info("issued library cards to existing accounts", "count", n)
@@ -61,6 +62,7 @@ func run() error {
 		Logger:        log,
 		SecureCookies: cfg.SecureCookies,
 		SessionTTL:    cfg.SessionTTL,
+		Location:      cfg.Location,
 	})
 	if err != nil {
 		return err

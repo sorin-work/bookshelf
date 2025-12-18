@@ -27,17 +27,21 @@ func TestLoadDefaults(t *testing.T) {
 	if c.SeedDemo || c.SecureCookies {
 		t.Error("booleans should default to false")
 	}
+	if c.Location != time.UTC {
+		t.Errorf("Location = %v", c.Location)
+	}
 }
 
 func TestLoadOverrides(t *testing.T) {
 	c, err := load(env(map[string]string{
-		"ADDR":           ":8080",
-		"DB_PATH":        "/data/library.db",
-		"LOG_LEVEL":      "debug",
-		"LOG_FORMAT":     "text",
-		"SECURE_COOKIES": "true",
-		"SEED_DEMO":      "1",
-		"SESSION_TTL":    "2h",
+		"ADDR":             ":8080",
+		"DB_PATH":          "/data/library.db",
+		"LOG_LEVEL":        "debug",
+		"LOG_FORMAT":       "text",
+		"SECURE_COOKIES":   "true",
+		"SEED_DEMO":        "1",
+		"SESSION_TTL":      "2h",
+		"LIBRARY_TIMEZONE": "Europe/Bucharest",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -51,6 +55,9 @@ func TestLoadOverrides(t *testing.T) {
 	if !c.SecureCookies || !c.SeedDemo || c.SessionTTL != 2*time.Hour {
 		t.Errorf("got %+v", c)
 	}
+	if c.Location.String() != "Europe/Bucharest" {
+		t.Errorf("Location = %v", c.Location)
+	}
 }
 
 func TestLoadErrors(t *testing.T) {
@@ -63,6 +70,7 @@ func TestLoadErrors(t *testing.T) {
 		{"bad bool", map[string]string{"SEED_DEMO": "yes please"}},
 		{"bad ttl", map[string]string{"SESSION_TTL": "forever"}},
 		{"short ttl", map[string]string{"SESSION_TTL": "10s"}},
+		{"bad time zone", map[string]string{"LIBRARY_TIMEZONE": "Mars/Olympus"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -20,6 +20,9 @@ type Config struct {
 	SecureCookies bool
 	SessionTTL    time.Duration
 	SeedDemo      bool
+	// Location is the library's time zone. Due dates and "today" are
+	// worked out in it.
+	Location *time.Location
 }
 
 func Load() (Config, error) {
@@ -52,6 +55,9 @@ func load(getenv func(string) string) (Config, error) {
 	}
 	if c.SessionTTL < time.Minute {
 		return c, fmt.Errorf("SESSION_TTL must be at least a minute")
+	}
+	if c.Location, err = time.LoadLocation(envOr(getenv, "LIBRARY_TIMEZONE", "UTC")); err != nil {
+		return c, fmt.Errorf("LIBRARY_TIMEZONE: %w", err)
 	}
 	return c, nil
 }

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sorin-work/bookshelf/internal/domain"
 	"github.com/sorin-work/bookshelf/internal/store"
@@ -20,7 +21,11 @@ type circ struct {
 // newCirc sets up a librarian, a member called Mo and a title with two
 // copies, C01 and C02.
 func newCirc(t *testing.T) circ {
-	env := newTestEnv(t)
+	return newCircIn(t, time.UTC)
+}
+
+func newCircIn(t *testing.T, zone *time.Location) circ {
+	env := newTestEnvIn(t, zone)
 	lib := env.librarian()
 	m := env.member("Mo Member", "mo@example.com")
 	mo, err := env.store.UserByEmail(t.Context(), "mo@example.com")
@@ -122,4 +127,16 @@ func TestRenewals(t *testing.T) {
 	wantStatus(t, r, http.StatusConflict)
 	wantBody(t, r, "maximum number of times")
 	wantBody(t, c.member.get("/account"), "Renewed the maximum number of times")
+}
+
+func TestDueDateUsesLibraryTimeZone(t *testing.T) {
+	bucharest, err := time.LoadLocation("Europe/Bucharest")
+	if err != nil {
+		t.Skip("no tz database")
+	}
+	c := newCircIn(t, bucharest)
+	// 22:30 UTC on the 10th is already the 11th in Bucharest.
+	c.env.now = time.Date(2026, time.March, 10, 22, 30, 0, 0, time.UTC)
+	r := c.checkout("C01")
+	wantBody(t, r, "Due Wed 1 Apr")
 }

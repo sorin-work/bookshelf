@@ -35,6 +35,11 @@ type testEnv struct {
 
 func newTestEnv(t *testing.T) *testEnv {
 	t.Helper()
+	return newTestEnvIn(t, time.UTC)
+}
+
+func newTestEnvIn(t *testing.T, loc *time.Location) *testEnv {
+	t.Helper()
 	ctx := context.Background()
 	conn, err := db.Open(ctx, filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
@@ -47,9 +52,10 @@ func newTestEnv(t *testing.T) *testEnv {
 
 	env := &testEnv{t: t, store: store.New(conn), now: testNow}
 	app, err := New(Options{
-		Store:  env.store,
-		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
-		Now:    func() time.Time { return env.now },
+		Store:    env.store,
+		Logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Location: loc,
+		Now:      func() time.Time { return env.now },
 	})
 	if err != nil {
 		t.Fatal(err)
