@@ -5,6 +5,7 @@ services:
     build: .
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      LIBRARY_TIMEZONE: ${LIBRARY_TIMEZONE:-UTC}
       # Leave false for plain http on localhost; set true behind https.
       SECURE_COOKIES: ${SECURE_COOKIES:-false}
     volumes:
