@@ -14,6 +14,9 @@ var (
 	ErrCopyOnLoan      = errors.New("this copy is already checked out")
 	ErrCopyUnavailable = errors.New("this copy is marked lost or withdrawn")
 	ErrNotOnLoan       = errors.New("this copy is not checked out")
+	// ErrCopyHeldForOther means the copy is on the hold shelf for someone
+	// else.
+	ErrCopyHeldForOther = errors.New("this copy is set aside for another member")
 )
 
 // LoanRow is a loan with the copy, title and member it involves.
@@ -120,6 +123,15 @@ func (s *Store) Checkout(ctx context.Context, req CheckoutRequest) (LoanRow, err
 		}
 		switch c.Status {
 		case domain.CopyAvailable:
+		case domain.CopyOnHoldShelf:
+			var holder int64
+			if err := tx.QueryRowContext(ctx, `SELECT user_id FROM holds WHERE copy_id = ? AND status = 'ready'`,
+				c.ID).Scan(&holder); err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return err
+			}
+			if holder != member.ID {
+				return ErrCopyHeldForOther
+			}
 		case domain.CopyOnLoan:
 			return ErrCopyOnLoan
 		default:
@@ -143,7 +155,14 @@ func (s *Store) Checkout(ctx context.Context, req CheckoutRequest) (LoanRow, err
 		if err != nil {
 			return fmt.Errorf("insert loan: %w", err)
 		}
-		loanID, err = res.LastInsertId()
+		if loanID, err = res.LastInsertId(); err != nil {
+			return err
+		}
+		// Borrowing a title closes the member's own hold on it, whether
+		// they collected the copy set aside for them or another one.
+		_, err = tx.ExecContext(ctx, `UPDATE holds SET status = 'fulfilled', closed_at = ?
+			WHERE title_id = ? AND user_id = ? AND status IN ('waiting', 'ready')`,
+			fmtTime(req.Now), c.TitleID, member.ID)
 		return err
 	})
 	if err != nil {
@@ -152,12 +171,25 @@ func (s *Store) Checkout(ctx context.Context, req CheckoutRequest) (LoanRow, err
 	return s.LoanByID(ctx, loanID)
 }
 
-// Return checks a copy back in.
-func (s *Store) Return(ctx context.Context, barcode string, now time.Time) (LoanRow, error) {
-	var loanID int64
+// ReturnResult is a returned loan and, if the copy went to the hold shelf,
+// the hold it is waiting for.
+type ReturnResult struct {
+	Loan LoanRow
+	Hold *HoldRow
+}
+
+// Return checks a copy back in. If someone is waiting for the title the
+// copy is set aside for them instead of going back on the shelf.
+func (s *Store) Return(ctx context.Context, barcode string, today domain.Date, now time.Time) (ReturnResult, error) {
+	var loanID, holdID int64
 	err := s.inTx(ctx, func(tx *sql.Tx) error {
-		err := tx.QueryRowContext(ctx, `SELECT l.id FROM loans l JOIN copies c ON c.id = l.copy_id
-			WHERE c.barcode = ? AND l.returned_at IS NULL`, barcode).Scan(&loanID)
+		policy, err := loadPolicy(ctx, tx)
+		if err != nil {
+			return err
+		}
+		var copyID int64
+		err = tx.QueryRowContext(ctx, `SELECT l.id, l.copy_id FROM loans l JOIN copies c ON c.id = l.copy_id
+			WHERE c.barcode = ? AND l.returned_at IS NULL`, barcode).Scan(&loanID, &copyID)
 		if errors.Is(err, sql.ErrNoRows) {
 			if _, err := scanCopy(tx.QueryRowContext(ctx, `SELECT `+copyColumns+` FROM copies WHERE barcode = ?`, barcode)); err != nil {
 				return err
@@ -170,14 +202,24 @@ func (s *Store) Return(ctx context.Context, barcode string, now time.Time) (Loan
 		if _, err := tx.ExecContext(ctx, `UPDATE loans SET returned_at = ? WHERE id = ?`, fmtTime(now), loanID); err != nil {
 			return err
 		}
-		_, err = tx.ExecContext(ctx, `UPDATE copies SET status = 'available'
-			WHERE id = (SELECT copy_id FROM loans WHERE id = ?)`, loanID)
+		holdID, err = shelveCopy(ctx, tx, copyID, policy, today)
 		return err
 	})
 	if err != nil {
-		return LoanRow{}, err
+		return ReturnResult{}, err
 	}
-	return s.LoanByID(ctx, loanID)
+	var res ReturnResult
+	if res.Loan, err = s.LoanByID(ctx, loanID); err != nil {
+		return ReturnResult{}, err
+	}
+	if holdID != 0 {
+		h, err := s.HoldByID(ctx, holdID)
+		if err != nil {
+			return ReturnResult{}, err
+		}
+		res.Hold = &h
+	}
+	return res, nil
 }
 
 // Renew extends an open loan if the policy allows it.

@@ -199,3 +199,4 @@ legend { font-weight: 700; margin-bottom: 0.5rem; }
 .checkboxes { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
 .checkboxes label { font-weight: normal; display: flex; gap: 0.35rem; align-items: center; }
 .checkboxes input { width: auto; }
+.alert.hold { background: #e6edf7; color: #24456e; border-left: 4px solid #24456e; }

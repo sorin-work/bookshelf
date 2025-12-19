@@ -137,3 +137,49 @@ func (s *Store) PlaceHold(ctx context.Context, userID, titleID int64, today doma
 	}
 	return s.HoldByID(ctx, holdID)
 }
+
+// shelveCopy decides where a copy goes when it comes free: to the first
+// waiting hold on its title (onto the hold shelf), or back on the shelf.
+// It returns the hold the copy was set aside for, if any.
+func shelveCopy(ctx context.Context, tx *sql.Tx, copyID int64, policy domain.Policy, today domain.Date) (int64, error) {
+	var titleID int64
+	if err := tx.QueryRowContext(ctx, `SELECT title_id FROM copies WHERE id = ?`, copyID).Scan(&titleID); err != nil {
+		return 0, err
+	}
+	queue, err := waitingQueue(ctx, tx, titleID)
+	if err != nil {
+		return 0, err
+	}
+	next, ok := domain.NextInQueue(queue)
+	if !ok {
+		_, err := tx.ExecContext(ctx, `UPDATE copies SET status = 'available' WHERE id = ?`, copyID)
+		return 0, err
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE holds SET status = 'ready', copy_id = ?, ready_on = ?, expires_on = ?
+		WHERE id = ?`, copyID, today.String(), policy.PickupDeadline(today).String(), next.ID); err != nil {
+		return 0, err
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE copies SET status = 'on_hold_shelf' WHERE id = ?`, copyID); err != nil {
+		return 0, err
+	}
+	return next.ID, nil
+}
+
+func waitingQueue(ctx context.Context, q querier, titleID int64) ([]domain.QueuedHold, error) {
+	rows, err := q.QueryContext(ctx, `SELECT id, placed_at FROM holds WHERE title_id = ? AND status = 'waiting'`, titleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []domain.QueuedHold
+	for rows.Next() {
+		var h domain.QueuedHold
+		var placed string
+		if err := rows.Scan(&h.ID, &placed); err != nil {
+			return nil, err
+		}
+		h.PlacedAt = parseTime(placed)
+		out = append(out, h)
+	}
+	return out, rows.Err()
+}

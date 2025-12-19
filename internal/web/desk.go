@@ -15,6 +15,8 @@ type deskResult struct {
 	OK      bool
 	Message string
 	Loan    *store.LoanRow
+	// Hold is set when a returned copy has to go on the hold shelf.
+	Hold *store.HoldRow
 }
 
 type deskPage struct {
@@ -80,6 +82,9 @@ func (s *Server) deskCheckout(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, store.ErrNotFound):
 		fail("No copy has barcode " + barcode + ".")
 		return
+	case errors.Is(err, store.ErrCopyHeldForOther):
+		fail("Copy " + barcode + " is on the hold shelf for another member.")
+		return
 	case errors.Is(err, store.ErrCopyOnLoan):
 		fail("Copy " + barcode + " is already checked out. Check it in first if it's in your hands.")
 		return
@@ -113,7 +118,8 @@ func (s *Server) deskReturn(w http.ResponseWriter, r *http.Request) {
 		s.deskRespond(w, r, d)
 		return
 	}
-	loan, err := s.store.Return(r.Context(), barcode, s.now())
+	res, err := s.store.Return(r.Context(), barcode, s.today(), s.now())
+	loan := res.Loan
 	switch {
 	case errors.Is(err, store.ErrNotFound):
 		d.Result = &deskResult{Message: "No copy has barcode " + barcode + "."}
@@ -128,7 +134,7 @@ func (s *Server) deskReturn(w http.ResponseWriter, r *http.Request) {
 		if late := loan.Rules().DaysOverdue(s.today()); late > 0 {
 			msg += fmt.Sprintf(" It was %d %s late.", late, plural(late, "day", "days"))
 		}
-		d.Result = &deskResult{OK: true, Message: msg, Loan: &loan}
+		d.Result = &deskResult{OK: true, Message: msg, Loan: &loan, Hold: res.Hold}
 	}
 	s.deskRespond(w, r, d)
 }

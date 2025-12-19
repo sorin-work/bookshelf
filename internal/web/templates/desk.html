@@ -35,5 +35,11 @@
     <p>{{.Message}}</p>
     {{with .Loan}}{{if not .Returned}}<p><strong>Due {{.Due.Format "Mon 2 Jan"}}</strong> · copy {{.Barcode}}</p>{{end}}{{end}}
   </div>
+  {{with .Hold}}
+  <div class="alert hold">
+    <p><strong>Put this copy on the hold shelf</strong> for {{.MemberName}} (card {{.CardNumber}}).</p>
+    <p>It waits for them until {{.ExpiresOn.Format "Mon 2 Jan"}}.</p>
+  </div>
+  {{end}}
 {{end}}
 {{end}}

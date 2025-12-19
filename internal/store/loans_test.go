@@ -71,21 +71,21 @@ func TestCheckoutAndReturn(t *testing.T) {
 		t.Errorf("second checkout: %v", err)
 	}
 
-	returned, err := f.s.Return(ctx, "B1", now)
+	returned, err := f.s.Return(ctx, "B1", f.today, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !returned.Returned() {
+	if !returned.Loan.Returned() || returned.Hold != nil {
 		t.Error("loan not marked returned")
 	}
 	c, _ = f.s.CopyByBarcode(ctx, "B1")
 	if c.Status != domain.CopyAvailable {
 		t.Errorf("copy status after return %s", c.Status)
 	}
-	if _, err := f.s.Return(ctx, "B1", now); !errors.Is(err, ErrNotOnLoan) {
+	if _, err := f.s.Return(ctx, "B1", f.today, now); !errors.Is(err, ErrNotOnLoan) {
 		t.Errorf("double return: %v", err)
 	}
-	if _, err := f.s.Return(ctx, "NOPE", now); !errors.Is(err, ErrNotFound) {
+	if _, err := f.s.Return(ctx, "NOPE", f.today, now); !errors.Is(err, ErrNotFound) {
 		t.Errorf("unknown barcode: %v", err)
 	}
 }
@@ -108,7 +108,7 @@ func TestCheckoutRules(t *testing.T) {
 		}
 	}
 	// Five is the default limit.
-	if _, err := f.s.Return(ctx, "B5", now); err != nil {
+	if _, err := f.s.Return(ctx, "B5", f.today, now); err != nil {
 		t.Fatal(err)
 	}
 	p := domain.DefaultPolicy()
@@ -123,7 +123,7 @@ func TestCheckoutRules(t *testing.T) {
 	if err := f.s.RenewCard(ctx, f.member.ID, f.today.AddDays(-1)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.s.Return(ctx, "B1", now); err != nil {
+	if _, err := f.s.Return(ctx, "B1", f.today, now); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := f.checkout(t, "B1"); !errors.Is(err, domain.ErrCardExpired) {
