@@ -15,7 +15,16 @@ type titleView struct {
 	Title     store.Title
 	Copies    []store.Copy
 	Available int
-	CopyForm  copyForm
+	// Circulating counts copies that are not lost or withdrawn.
+	Circulating int
+	CopyForm    copyForm
+	// Queue is every open hold, shown to librarians.
+	Queue   []store.HoldRow
+	Waiting int
+	// MyHold is the signed in member's open hold on this title.
+	MyHold *store.HoldRow
+	// CanHold says whether to offer the "place a hold" button.
+	CanHold bool
 }
 
 type copyForm struct {
@@ -36,10 +45,27 @@ func (s *Server) loadTitleView(r *http.Request, id int64) (titleView, error) {
 	}
 	v := titleView{Title: t, Copies: copies}
 	for _, c := range copies {
-		if c.Status == domain.CopyAvailable {
+		switch c.Status {
+		case domain.CopyAvailable:
 			v.Available++
+			v.Circulating++
+		case domain.CopyOnLoan, domain.CopyOnHoldShelf:
+			v.Circulating++
 		}
 	}
+	if v.Queue, err = s.store.HoldQueue(r.Context(), id); err != nil {
+		return titleView{}, err
+	}
+	user := currentUser(r)
+	for i, h := range v.Queue {
+		if h.Status == domain.HoldWaiting {
+			v.Waiting++
+		}
+		if user != nil && h.UserID == user.ID {
+			v.MyHold = &v.Queue[i]
+		}
+	}
+	v.CanHold = user != nil && v.MyHold == nil && v.Available == 0 && v.Circulating > 0
 	return v, nil
 }
 

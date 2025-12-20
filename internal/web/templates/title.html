@@ -12,7 +12,21 @@
       {{if .Data.Available}}<span class="badge ok">{{.Data.Available}} of {{len .Data.Copies}} on the shelf</span>
       {{else if .Data.Copies}}<span class="badge warn">All copies are out</span>
       {{else}}<span class="badge">No copies yet</span>{{end}}
+      {{with .Data.Waiting}}<span class="muted">{{.}} waiting</span>{{end}}
     </p>
+    {{with .Data.MyHold}}
+      <p class="alert hold">{{if eq .Status "ready"}}A copy is waiting for you at the desk until {{.ExpiresOn.Format "Monday 2 January"}}.{{else}}You're number {{.Position}} in the queue.{{end}}</p>
+    {{else}}
+      {{if .Data.CanHold}}
+        <form method="post" action="/titles/{{$t.ID}}/hold" class="inline">
+          {{template "csrf" $}}
+          <button type="submit">Place a hold</button>
+        </form>
+        <p class="hint">All copies are out. We'll set the next one that comes back aside for you.</p>
+      {{else if and (not $.User) (not .Data.Available) .Data.Circulating}}
+        <p class="hint"><a href="/login?next=/titles/{{$t.ID}}">Log in</a> to place a hold.</p>
+      {{end}}
+    {{end}}
     <dl class="facts">
       {{with $t.ISBN}}<dt>ISBN</dt><dd>{{.}}</dd>{{end}}
       {{with $t.Publisher}}<dt>Publisher</dt><dd>{{.}}</dd>{{end}}
@@ -25,6 +39,25 @@
 </article>
 
 {{if and $.User $.User.IsLibrarian}}
+{{if .Data.Queue}}
+<section id="queue">
+  <h2>Holds</h2>
+  <table class="table">
+    <thead><tr><th>#</th><th>Member</th><th>Placed</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {{range .Data.Queue}}
+      <tr>
+        <td>{{if .Position}}{{.Position}}{{end}}</td>
+        <td><a href="/members/{{.UserID}}">{{.MemberName}}</a></td>
+        <td>{{date .PlacedAt}}</td>
+        <td>{{.Status.Label}}{{if eq .Status "ready"}}: copy {{.Barcode}} until {{.ExpiresOn.Format "2 Jan"}}{{end}}</td>
+        <td class="row-actions"><form method="post" action="/holds/{{.ID}}/cancel" class="inline">{{template "csrf" $}}<button class="link">Cancel</button></form></td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{end}}
 <section id="copies">
   <h2>Copies</h2>
   {{if .Data.Copies}}

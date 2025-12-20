@@ -1,0 +1,45 @@
+{{define "content"}}
+{{$d := .Data}}
+<h1>Holds</h1>
+<section>
+  <h2>On the hold shelf</h2>
+  {{if $d.Shelf}}
+  <table class="table">
+    <thead><tr><th>Copy</th><th>Title</th><th>For</th><th>Collect by</th><th></th></tr></thead>
+    <tbody>
+    {{range $d.Shelf}}
+      <tr>
+        <td><code>{{.Barcode}}</code></td>
+        <td><a href="/titles/{{.TitleID}}">{{.Title}}</a></td>
+        <td><a href="/members/{{.UserID}}">{{.MemberName}}</a></td>
+        <td>{{.ExpiresOn.Format "Mon 2 Jan"}}{{if eq .ExpiresOn $d.Today}} <span class="badge warn">last day</span>{{end}}</td>
+        <td class="row-actions"><form method="post" action="/holds/{{.ID}}/cancel" class="inline">{{template "csrf" $}}<button class="link">Cancel</button></form></td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="muted">Nothing is waiting to be collected.</p>
+  {{end}}
+</section>
+<section>
+  <h2>Waiting for a copy</h2>
+  {{if $d.Waiting}}
+  <table class="table">
+    <thead><tr><th>Title</th><th>Member</th><th>Place in queue</th><th>Placed</th></tr></thead>
+    <tbody>
+    {{range $d.Waiting}}
+      <tr>
+        <td><a href="/titles/{{.TitleID}}">{{.Title}}</a></td>
+        <td><a href="/members/{{.UserID}}">{{.MemberName}}</a></td>
+        <td>{{.Position}}</td>
+        <td>{{date .PlacedAt}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="muted">No one is waiting.</p>
+  {{end}}
+</section>
+{{end}}

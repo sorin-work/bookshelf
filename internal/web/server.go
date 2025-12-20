@@ -85,6 +85,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /titles/{id}", s.requireLibrarian(s.updateTitle))
 	mux.HandleFunc("POST /titles/{id}/copies", s.requireLibrarian(s.addCopy))
 	mux.HandleFunc("POST /copies/{id}/status", s.requireLibrarian(s.setCopyStatus))
+	mux.HandleFunc("POST /titles/{id}/hold", s.requireUser(s.placeHold))
+	mux.HandleFunc("POST /holds/{id}/cancel", s.requireUser(s.cancelHold))
+	mux.HandleFunc("GET /holds", s.requireLibrarian(s.holds))
 
 	mux.HandleFunc("GET /desk", s.requireLibrarian(s.desk))
 	mux.HandleFunc("POST /desk/checkout", s.requireLibrarian(s.deskCheckout))
