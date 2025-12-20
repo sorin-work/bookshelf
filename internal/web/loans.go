@@ -83,5 +83,9 @@ func (s *Server) renewLoan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.log.Info("loan renewed", "loan_id", id, "by", user.ID)
+	renewed, err := s.store.LoanByID(r.Context(), id)
+	if err == nil {
+		s.setFlash(w, renewed.Title+" renewed. It's now due "+renewed.Due.Format("Monday 2 January")+".")
+	}
 	http.Redirect(w, r, back, http.StatusSeeOther)
 }

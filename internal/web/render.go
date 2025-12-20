@@ -25,6 +25,7 @@ type page struct {
 	Title string
 	User  *store.User
 	CSRF  string
+	Flash string
 	Data  any
 }
 
@@ -79,6 +80,7 @@ func parsePages() (map[string]*template.Template, error) {
 // render writes a full page. It renders into a buffer first so a template
 // error turns into a clean 500 instead of half a page.
 func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name string, p page) {
+	p.Flash = s.takeFlash(w, r)
 	s.execute(w, r, status, name, "layout", p)
 }
 

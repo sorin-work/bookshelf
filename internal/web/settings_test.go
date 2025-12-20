@@ -16,7 +16,8 @@ func TestSettings(t *testing.T) {
 	wantBody(t, lib.get("/settings"), `value="21"`)
 
 	form := url.Values{"loan_days": {"14"}, "max_renewals": {"1"}, "max_loans": {"3"}, "closed": {"0", "6"}}
-	wantRedirect(t, lib.post("/settings", form), "/settings?saved=1")
+	wantRedirect(t, lib.post("/settings", form), "/settings")
+	wantBody(t, lib.get("/settings"), "Saved. New checkouts")
 	p, err := env.store.Policy(t.Context())
 	if err != nil {
 		t.Fatal(err)

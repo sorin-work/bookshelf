@@ -2,7 +2,6 @@
 {{$d := .Data}}
 <div class="narrow wide">
   <h1>Lending rules</h1>
-  {{if $d.Saved}}<p class="alert ok">Saved. New checkouts and renewals use these rules; existing due dates don't change.</p>{{end}}
   <form method="post" action="/settings" class="card" novalidate>
     {{template "csrf" .}}
     {{with index $d.Errors "form"}}<p class="alert error">{{.}}</p>{{end}}

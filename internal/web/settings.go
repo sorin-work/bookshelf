@@ -19,7 +19,6 @@ type settingsPage struct {
 	Values   map[string]string
 	Weekdays []weekdayOption
 	Errors   formErrors
-	Saved    bool
 }
 
 // policyFields maps form fields to the integer policy settings they edit.
@@ -54,9 +53,7 @@ func (s *Server) settings(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
-	d := settingsData(p)
-	d.Saved = r.URL.Query().Get("saved") == "1"
-	s.render(w, r, http.StatusOK, "settings.html", page{Title: "Lending rules", Data: d})
+	s.render(w, r, http.StatusOK, "settings.html", page{Title: "Lending rules", Data: settingsData(p)})
 }
 
 func (s *Server) saveSettings(w http.ResponseWriter, r *http.Request) {
@@ -107,5 +104,6 @@ func (s *Server) saveSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.log.Info("lending policy changed", "by", currentUser(r).ID)
-	http.Redirect(w, r, "/settings?saved=1", http.StatusSeeOther)
+	s.setFlash(w, "Saved. New checkouts and renewals use these rules; existing due dates don't change.")
+	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }
