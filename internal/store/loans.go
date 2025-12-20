@@ -151,7 +151,7 @@ func (s *Store) Checkout(ctx context.Context, req CheckoutRequest) (LoanRow, err
 			return err
 		}
 		res, err := tx.ExecContext(ctx, `INSERT INTO loans (copy_id, user_id, checked_out_at, checked_out_by, due_on)
-			VALUES (?, ?, ?, ?, ?)`, c.ID, member.ID, fmtTime(req.Now), req.StaffID, policy.DueDate(req.Today).String())
+			VALUES (?, ?, ?, ?, ?)`, c.ID, member.ID, fmtTime(req.Now), sql.NullInt64{Int64: req.StaffID, Valid: req.StaffID != 0}, policy.DueDate(req.Today).String())
 		if err != nil {
 			return fmt.Errorf("insert loan: %w", err)
 		}

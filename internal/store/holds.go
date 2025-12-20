@@ -183,3 +183,89 @@ func waitingQueue(ctx context.Context, q querier, titleID int64) ([]domain.Queue
 	}
 	return out, rows.Err()
 }
+
+var ErrHoldClosed = errors.New("this hold is no longer open")
+
+// CancelHold cancels an open hold. A copy that was waiting for it moves on
+// to the next member in the queue.
+func (s *Store) CancelHold(ctx context.Context, holdID int64, today domain.Date, now time.Time) error {
+	return s.inTx(ctx, func(tx *sql.Tx) error {
+		policy, err := loadPolicy(ctx, tx)
+		if err != nil {
+			return err
+		}
+		var status domain.HoldStatus
+		var copyID sql.NullInt64
+		err = tx.QueryRowContext(ctx, `SELECT status, copy_id FROM holds WHERE id = ?`, holdID).Scan(&status, &copyID)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if !status.Open() {
+			return ErrHoldClosed
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE holds SET status = 'cancelled', closed_at = ? WHERE id = ?`,
+			fmtTime(now), holdID); err != nil {
+			return err
+		}
+		if status == domain.HoldReady && copyID.Valid {
+			_, err = shelveCopy(ctx, tx, copyID.Int64, policy, today)
+		}
+		return err
+	})
+}
+
+// ExpireHolds closes ready holds whose pickup deadline has passed and
+// passes their copies on. It returns how many holds expired.
+func (s *Store) ExpireHolds(ctx context.Context, today domain.Date, now time.Time) (int, error) {
+	n := 0
+	err := s.inTx(ctx, func(tx *sql.Tx) error {
+		policy, err := loadPolicy(ctx, tx)
+		if err != nil {
+			return err
+		}
+		type expired struct{ holdID, copyID int64 }
+		var list []expired
+		rows, err := tx.QueryContext(ctx, `SELECT id, copy_id FROM holds
+			WHERE status = 'ready' AND expires_on < ? ORDER BY expires_on, id`, today.String())
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var e expired
+			if err := rows.Scan(&e.holdID, &e.copyID); err != nil {
+				return err
+			}
+			list = append(list, e)
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		for _, e := range list {
+			if _, err := tx.ExecContext(ctx, `UPDATE holds SET status = 'expired', closed_at = ? WHERE id = ?`,
+				fmtTime(now), e.holdID); err != nil {
+				return err
+			}
+			if _, err := shelveCopy(ctx, tx, e.copyID, policy, today); err != nil {
+				return err
+			}
+			n++
+		}
+		return nil
+	})
+	return n, err
+}
+
+// HoldShelf lists the copies waiting to be collected, the ones expiring
+// soonest first.
+func (s *Store) HoldShelf(ctx context.Context) ([]HoldRow, error) {
+	return queryHolds(ctx, s.db, `WHERE h.status = 'ready' ORDER BY h.expires_on, h.id`)
+}
+
+// WaitingHolds lists every hold still in a queue, oldest first.
+func (s *Store) WaitingHolds(ctx context.Context, limit int) ([]HoldRow, error) {
+	return queryHolds(ctx, s.db, `WHERE h.status = 'waiting' ORDER BY h.placed_at, h.id LIMIT ?`, limit)
+}
