@@ -9,6 +9,7 @@ import (
 type accountPage struct {
 	CardExpired bool
 	Loans       []loanLine
+	Holds       []store.HoldRow
 	History     []store.LoanRow
 }
 
@@ -23,6 +24,10 @@ func (s *Server) account(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if d.Loans, err = s.loanLines(r, active); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	if d.Holds, err = s.store.OpenHolds(r.Context(), u.ID); err != nil {
 		s.serverError(w, r, err)
 		return
 	}

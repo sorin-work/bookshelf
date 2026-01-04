@@ -200,3 +200,14 @@ legend { font-weight: 700; margin-bottom: 0.5rem; }
 .checkboxes label { font-weight: normal; display: flex; gap: 0.35rem; align-items: center; }
 .checkboxes input { width: auto; }
 .alert.hold { background: #e6edf7; color: #24456e; border-left: 4px solid #24456e; }
+
+ul.holds { list-style: none; padding: 0; margin: 0; }
+ul.holds li {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+ul.holds li p { margin: 0.25rem 0 0; }

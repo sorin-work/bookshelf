@@ -19,6 +19,29 @@
   {{template "loan_table" args "Page" $ "Loans" .Data.Loans "Empty" "You have nothing out at the moment."}}
 </section>
 
+<section>
+  <h2>Holds</h2>
+  {{if .Data.Holds}}
+  <ul class="holds">
+    {{range .Data.Holds}}
+    <li>
+      <div>
+        <a href="/titles/{{.TitleID}}">{{.Title}}</a>
+        {{if eq .Status "ready"}}
+          <p class="alert hold">Ready at the desk. Collect it by {{.ExpiresOn.Format "Monday 2 January"}}.</p>
+        {{else}}
+          <p class="muted">Number {{.Position}} in the queue, placed {{date .PlacedAt}}</p>
+        {{end}}
+      </div>
+      <form method="post" action="/holds/{{.ID}}/cancel" class="inline">{{template "csrf" $}}<button type="submit" class="link">Cancel hold</button></form>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="muted">No holds. When every copy of a book is out, place a hold from its page in the <a href="/catalogue">catalogue</a>.</p>
+  {{end}}
+</section>
+
 {{if .Data.History}}
 <section>
   <h2>Recently returned</h2>
