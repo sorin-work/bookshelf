@@ -77,6 +77,8 @@ func run() error {
 		IdleTimeout:       120 * time.Second,
 	}
 
+	go expireHolds(ctx, st, cfg.Location, log)
+
 	errCh := make(chan error, 1)
 	go func() {
 		log.Info("listening", "addr", cfg.Addr)
@@ -103,4 +105,26 @@ func newLogger(cfg config.Config) *slog.Logger {
 		return slog.New(slog.NewTextHandler(os.Stdout, opts))
 	}
 	return slog.New(slog.NewJSONHandler(os.Stdout, opts))
+}
+
+// expireHolds closes uncollected holds once at start and then every hour,
+// handing their copies to the next member in each queue.
+func expireHolds(ctx context.Context, st *store.Store, loc *time.Location, log *slog.Logger) {
+	ticker := time.NewTicker(time.Hour)
+	defer ticker.Stop()
+	for {
+		now := time.Now()
+		n, err := st.ExpireHolds(ctx, domain.DateOf(now.In(loc)), now)
+		switch {
+		case err != nil && ctx.Err() == nil:
+			log.Error("expire holds", "err", err)
+		case n > 0:
+			log.Info("expired uncollected holds", "count", n)
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }
