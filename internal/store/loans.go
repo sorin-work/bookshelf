@@ -33,14 +33,19 @@ type LoanRow struct {
 	Due          domain.Date
 	Renewals     int
 	ReturnedAt   time.Time
+	// HoldsWaiting counts holds on the title, which block renewals.
+	HoldsWaiting int
 }
 
-func (l LoanRow) Rules() domain.Loan { return domain.Loan{Due: l.Due, Renewals: l.Renewals} }
+func (l LoanRow) Rules() domain.Loan {
+	return domain.Loan{Due: l.Due, Renewals: l.Renewals, HoldsWaiting: l.HoldsWaiting}
+}
 
 func (l LoanRow) Returned() bool { return !l.ReturnedAt.IsZero() }
 
 const loanSelect = `SELECT l.id, l.copy_id, c.barcode, t.id, t.title, u.id, u.name,
-	coalesce(u.card_number, ''), l.checked_out_at, l.due_on, l.renewals, coalesce(l.returned_at, '')
+	coalesce(u.card_number, ''), l.checked_out_at, l.due_on, l.renewals, coalesce(l.returned_at, ''),
+	(SELECT count(*) FROM holds h WHERE h.title_id = t.id AND h.status IN ('waiting', 'ready'))
 	FROM loans l
 	JOIN copies c ON c.id = l.copy_id
 	JOIN titles t ON t.id = c.title_id
@@ -50,7 +55,7 @@ func scanLoan(row interface{ Scan(...any) error }) (LoanRow, error) {
 	var l LoanRow
 	var out, due, returned string
 	err := row.Scan(&l.ID, &l.CopyID, &l.Barcode, &l.TitleID, &l.Title, &l.UserID, &l.MemberName,
-		&l.CardNumber, &out, &due, &l.Renewals, &returned)
+		&l.CardNumber, &out, &due, &l.Renewals, &returned, &l.HoldsWaiting)
 	if errors.Is(err, sql.ErrNoRows) {
 		return LoanRow{}, ErrNotFound
 	}

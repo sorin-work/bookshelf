@@ -5,6 +5,7 @@ import "errors"
 var (
 	ErrRenewalLimit = errors.New("this loan has been renewed as many times as allowed")
 	ErrRenewOverdue = errors.New("overdue items can't be renewed; bring it back to the desk")
+	ErrRenewHeld    = errors.New("someone is waiting for this title, so it can't be renewed")
 	ErrCardExpired  = errors.New("the library card has expired")
 	ErrTooManyLoans = errors.New("the member already has as many items out as allowed")
 )
@@ -13,6 +14,8 @@ var (
 type Loan struct {
 	Due      Date
 	Renewals int
+	// HoldsWaiting is how many members are queued for the title.
+	HoldsWaiting int
 }
 
 // Overdue reports whether the loan was due before today.
@@ -30,6 +33,9 @@ func (l Loan) DaysOverdue(today Date) int {
 func (p Policy) CanRenew(l Loan, today Date) error {
 	if l.Overdue(today) {
 		return ErrRenewOverdue
+	}
+	if l.HoldsWaiting > 0 {
+		return ErrRenewHeld
 	}
 	if l.Renewals >= p.MaxRenewals {
 		return ErrRenewalLimit

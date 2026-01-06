@@ -46,6 +46,8 @@ func renewalMessage(err error) string {
 		return "Renewed the maximum number of times"
 	case errors.Is(err, domain.ErrRenewOverdue):
 		return "Overdue, return it to the desk"
+	case errors.Is(err, domain.ErrRenewHeld):
+		return "Someone else is waiting for it"
 	}
 	return "Can't be renewed"
 }
@@ -75,7 +77,8 @@ func (s *Server) renewLoan(w http.ResponseWriter, r *http.Request) {
 	}
 	if _, err := s.store.Renew(r.Context(), id, s.today()); err != nil {
 		switch {
-		case errors.Is(err, domain.ErrRenewalLimit), errors.Is(err, domain.ErrRenewOverdue), errors.Is(err, store.ErrNotOnLoan):
+		case errors.Is(err, domain.ErrRenewalLimit), errors.Is(err, domain.ErrRenewOverdue),
+			errors.Is(err, domain.ErrRenewHeld), errors.Is(err, store.ErrNotOnLoan):
 			http.Error(w, renewalMessage(err)+".", http.StatusConflict)
 		default:
 			s.serverError(w, r, err)
