@@ -27,6 +27,8 @@ func policyFields(p *domain.Policy) map[string]*int {
 		"loan_days":    &p.LoanDays,
 		"max_renewals": &p.MaxRenewals,
 		"max_loans":    &p.MaxLoans,
+		"pickup_days":  &p.HoldPickupDays,
+		"max_holds":    &p.MaxHolds,
 	}
 }
 

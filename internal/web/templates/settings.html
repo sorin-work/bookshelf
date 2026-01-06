@@ -26,6 +26,22 @@
       </div>
     </fieldset>
     <fieldset>
+      <legend>Holds</legend>
+      <div class="row">
+        <div class="field">
+          <label for="pickup_days">Days to collect a hold</label>
+          <input id="pickup_days" name="pickup_days" inputmode="numeric" value="{{index $d.Values "pickup_days"}}">
+          {{template "field_error" index $d.Errors "pickup_days"}}
+        </div>
+        <div class="field">
+          <label for="max_holds">Holds per member</label>
+          <input id="max_holds" name="max_holds" inputmode="numeric" value="{{index $d.Values "max_holds"}}">
+          <p class="hint">0 turns holds off.</p>
+          {{template "field_error" index $d.Errors "max_holds"}}
+        </div>
+      </div>
+    </fieldset>
+    <fieldset>
       <legend>Closed on</legend>
       <p class="hint">Nothing falls due on a day the library is closed.</p>
       <div class="checkboxes">
