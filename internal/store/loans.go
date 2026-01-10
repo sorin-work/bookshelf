@@ -33,7 +33,8 @@ type LoanRow struct {
 	Due          domain.Date
 	Renewals     int
 	ReturnedAt   time.Time
-	// HoldsWaiting counts holds on the title, which block renewals.
+	// HoldsWaiting counts members still queued for the title, which
+	// blocks renewals. Holds that already have a copy set aside do not.
 	HoldsWaiting int
 }
 
@@ -45,7 +46,7 @@ func (l LoanRow) Returned() bool { return !l.ReturnedAt.IsZero() }
 
 const loanSelect = `SELECT l.id, l.copy_id, c.barcode, t.id, t.title, u.id, u.name,
 	coalesce(u.card_number, ''), l.checked_out_at, l.due_on, l.renewals, coalesce(l.returned_at, ''),
-	(SELECT count(*) FROM holds h WHERE h.title_id = t.id AND h.status IN ('waiting', 'ready'))
+	(SELECT count(*) FROM holds h WHERE h.title_id = t.id AND h.status = 'waiting')
 	FROM loans l
 	JOIN copies c ON c.id = l.copy_id
 	JOIN titles t ON t.id = c.title_id

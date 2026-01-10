@@ -170,3 +170,31 @@ func TestExpireHolds(t *testing.T) {
 		t.Errorf("hold shelf %+v", shelf)
 	}
 }
+
+func TestReadyHoldDoesNotBlockRenewals(t *testing.T) {
+	f := newHoldFixture(t)
+	ctx := context.Background()
+	// Bring B2 back so the title has two copies, both out.
+	c, _ := f.s.CopyByBarcode(ctx, "B2")
+	if err := f.s.SetCopyStatus(ctx, c.ID, domain.CopyAvailable); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.s.Checkout(ctx, CheckoutRequest{UserID: f.ana.ID, Barcode: "B2", Today: f.today, Now: now}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.s.PlaceHold(ctx, f.bob.ID, f.titleID, f.today, now); err != nil {
+		t.Fatal(err)
+	}
+	loans, _ := f.s.ActiveLoans(ctx, f.member.ID)
+	if _, err := f.s.Renew(ctx, loans[0].ID, f.today); !errors.Is(err, domain.ErrRenewHeld) {
+		t.Fatalf("renewal with bob waiting: %v", err)
+	}
+
+	// Ana's copy goes to Bob, so nobody is waiting any more.
+	if _, err := f.s.Return(ctx, "B2", f.today, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.s.Renew(ctx, loans[0].ID, f.today); err != nil {
+		t.Errorf("renewal with bob's copy on the hold shelf: %v", err)
+	}
+}
