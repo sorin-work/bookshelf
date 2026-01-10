@@ -100,3 +100,22 @@ func TestCanBorrow(t *testing.T) {
 		})
 	}
 }
+
+func TestCanBorrowWithFines(t *testing.T) {
+	p := DefaultPolicy() // blocked at 10.00
+	today := mustDate(t, "2026-03-10")
+	b := Borrower{CardExpires: today.AddDays(30)}
+
+	b.FinesOwed = 999
+	if err := p.CanBorrow(b, today); err != nil {
+		t.Errorf("just under the limit: %v", err)
+	}
+	b.FinesOwed = 1000
+	if err := p.CanBorrow(b, today); !errors.Is(err, ErrFinesOwed) {
+		t.Errorf("at the limit: %v", err)
+	}
+	p.BlockAt = 0
+	if err := p.CanBorrow(b, today); err != nil {
+		t.Errorf("block switched off: %v", err)
+	}
+}

@@ -57,12 +57,17 @@ func (p Policy) RenewedDue(l Loan, today Date) Date {
 type Borrower struct {
 	CardExpires Date
 	ActiveLoans int
+	// FinesOwed is the member's unpaid fines in cents.
+	FinesOwed int
 }
 
 // CanBorrow checks whether a member may take out one more item today.
 func (p Policy) CanBorrow(b Borrower, today Date) error {
 	if !b.CardExpires.IsZero() && b.CardExpires.Before(today) {
 		return ErrCardExpired
+	}
+	if p.BlockAt > 0 && b.FinesOwed >= p.BlockAt {
+		return ErrFinesOwed
 	}
 	if b.ActiveLoans >= p.MaxLoans {
 		return ErrTooManyLoans

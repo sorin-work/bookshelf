@@ -22,6 +22,19 @@ type Policy struct {
 	HoldPickupDays int
 	// MaxHolds is how many holds one member can have at once.
 	MaxHolds int
+
+	// FinePerDay is charged for each day an item is late, in cents.
+	FinePerDay int
+	// FineCap is the most one late item can cost, in cents.
+	FineCap int
+	// FineGraceDays are days late that are forgiven: an item returned
+	// within them costs nothing.
+	FineGraceDays int
+	// BlockAt stops checkouts once a member owes this much, in cents.
+	// Zero means members are never blocked.
+	BlockAt int
+	// Currency is printed in front of amounts.
+	Currency string
 }
 
 func DefaultPolicy() Policy {
@@ -33,6 +46,12 @@ func DefaultPolicy() Policy {
 
 		HoldPickupDays: 7,
 		MaxHolds:       5,
+
+		FinePerDay:    25,
+		FineCap:       500,
+		FineGraceDays: 0,
+		BlockAt:       1000,
+		Currency:      "€",
 	}
 }
 
@@ -52,6 +71,21 @@ func (p Policy) Validate() error {
 	}
 	if p.MaxHolds < 0 || p.MaxHolds > 50 {
 		errs = append(errs, fmt.Errorf("holds per member must be between 0 and 50"))
+	}
+	if p.FinePerDay < 0 || p.FinePerDay > 10000 {
+		errs = append(errs, fmt.Errorf("the daily fine must be between 0 and 100.00"))
+	}
+	if p.FineCap < 0 || p.FineCap > 100000 {
+		errs = append(errs, fmt.Errorf("the fine cap must be between 0 and 1000.00"))
+	}
+	if p.FineGraceDays < 0 || p.FineGraceDays > 30 {
+		errs = append(errs, fmt.Errorf("grace days must be between 0 and 30"))
+	}
+	if p.BlockAt < 0 {
+		errs = append(errs, fmt.Errorf("the borrowing block can't be negative"))
+	}
+	if len([]rune(p.Currency)) > 4 {
+		errs = append(errs, fmt.Errorf("the currency symbol can be at most 4 characters"))
 	}
 	closed := map[time.Weekday]bool{}
 	for _, d := range p.ClosedDays {
