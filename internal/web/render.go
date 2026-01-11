@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sorin-work/bookshelf/internal/domain"
 	"github.com/sorin-work/bookshelf/internal/store"
 )
 
@@ -45,6 +46,9 @@ var funcs = template.FuncMap{
 			m[k] = kv[i+1]
 		}
 		return m, nil
+	},
+	"money": func(cents int, currency string) string {
+		return domain.Policy{Currency: currency}.FormatMoney(cents)
 	},
 	"date": func(t time.Time) string {
 		if t.IsZero() {

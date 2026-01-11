@@ -153,6 +153,10 @@ type memberView struct {
 	CardExpired bool
 	Loans       []loanLine
 	History     []store.LoanRow
+	Fines       []store.Fine
+	Owed        int
+	Currency    string
+	Blocked     bool
 }
 
 func (s *Server) memberPage(w http.ResponseWriter, r *http.Request) {
@@ -174,6 +178,21 @@ func (s *Server) memberPage(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
+	if v.Fines, err = s.store.Fines(r.Context(), m.ID, 20); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	if v.Owed, err = s.store.FinesOwed(r.Context(), m.ID); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	policy, err := s.store.Policy(r.Context())
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	v.Currency = policy.Currency
+	v.Blocked = policy.BlockAt > 0 && v.Owed >= policy.BlockAt
 	s.render(w, r, http.StatusOK, "member.html", page{Title: m.Name, Data: v})
 }
 

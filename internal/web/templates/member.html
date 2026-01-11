@@ -44,6 +44,52 @@
   {{template "loan_table" args "Page" $ "Loans" .Data.Loans "Empty" "Nothing on loan right now."}}
 </section>
 
+<section id="fines">
+  <h2>Fines</h2>
+  <p>
+    {{if .Data.Owed}}Owes <strong>{{money .Data.Owed .Data.Currency}}</strong>{{if .Data.Blocked}} <span class="badge warn">can't borrow until they pay</span>{{end}}
+    {{else}}<span class="muted">Nothing owed.</span>{{end}}
+  </p>
+  {{if .Data.Fines}}
+  <table class="table">
+    <thead><tr><th>Date</th><th>For</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {{range .Data.Fines}}
+      <tr>
+        <td>{{date .CreatedAt}}</td>
+        <td>{{if eq .Kind "late"}}Late return{{with .Title}}: {{.}}{{end}}{{else}}{{.Note}}{{end}}</td>
+        <td>{{money .Amount $.Data.Currency}}</td>
+        <td>{{if eq .Status "open"}}Unpaid{{else if eq .Status "paid"}}Paid {{date .ResolvedAt}}{{else}}Waived {{date .ResolvedAt}}{{end}}</td>
+        <td class="row-actions">
+          {{if eq .Status "open"}}
+            <form method="post" action="/fines/{{.ID}}/resolve" class="inline">{{template "csrf" $}}<input type="hidden" name="status" value="paid"><button class="link">Paid</button></form>
+            <form method="post" action="/fines/{{.ID}}/resolve" class="inline">{{template "csrf" $}}<input type="hidden" name="status" value="waived"><button class="link">Waive</button></form>
+          {{end}}
+        </td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{end}}
+  <details class="add-charge">
+    <summary>Add a charge</summary>
+    <form method="post" action="/members/{{$m.ID}}/charges" class="card" novalidate>
+      {{template "csrf" .}}
+      <div class="row">
+        <div class="field">
+          <label for="charge-amount">Amount</label>
+          <input id="charge-amount" name="amount" inputmode="decimal" placeholder="4.50" required>
+        </div>
+        <div class="field">
+          <label for="charge-note">What for</label>
+          <input id="charge-note" name="note" placeholder="Replacement for a lost copy" required>
+        </div>
+      </div>
+      <button type="submit">Add charge</button>
+    </form>
+  </details>
+</section>
+
 {{if .Data.History}}
 <section>
   <h2>Recently returned</h2>

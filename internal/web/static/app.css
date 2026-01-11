@@ -211,3 +211,6 @@ ul.holds li {
   border-bottom: 1px solid var(--border);
 }
 ul.holds li p { margin: 0.25rem 0 0; }
+
+details.add-charge { margin-top: 1rem; }
+details.add-charge summary { cursor: pointer; color: var(--accent); margin-bottom: 0.75rem; }
