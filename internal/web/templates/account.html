@@ -10,6 +10,7 @@
   <section class="card">
     <p class="big-number">{{len .Data.Loans}}</p>
     <p class="muted">{{if eq (len .Data.Loans) 1}}item{{else}}items{{end}} on loan</p>
+    {{if .Data.Owed}}<p>You owe <strong>{{money .Data.Owed .Data.Currency}}</strong> in fines. You can pay at the desk.</p>{{end}}
     <p><a href="/catalogue">Find something to read →</a></p>
   </section>
 </div>
@@ -41,6 +42,25 @@
   <p class="muted">No holds. When every copy of a book is out, place a hold from its page in the <a href="/catalogue">catalogue</a>.</p>
   {{end}}
 </section>
+
+{{if .Data.Fines}}
+<section>
+  <h2>Fines</h2>
+  <table class="table">
+    <thead><tr><th>Date</th><th>For</th><th>Amount</th><th>Status</th></tr></thead>
+    <tbody>
+    {{range .Data.Fines}}
+      <tr>
+        <td>{{date .CreatedAt}}</td>
+        <td>{{if eq .Kind "late"}}Late return{{with .Title}}: {{.}}{{end}}{{else}}{{.Note}}{{end}}</td>
+        <td>{{money .Amount $.Data.Currency}}</td>
+        <td>{{if eq .Status "open"}}Unpaid{{else if eq .Status "paid"}}Paid{{else}}Waived{{end}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{end}}
 
 {{if .Data.History}}
 <section>
