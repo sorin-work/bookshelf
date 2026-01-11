@@ -144,12 +144,15 @@ func (s *Store) Checkout(ctx context.Context, req CheckoutRequest) (LoanRow, err
 			return ErrCopyUnavailable
 		}
 
-		var active int
+		b := domain.Borrower{CardExpires: member.CardExpires}
 		if err := tx.QueryRowContext(ctx, `SELECT count(*) FROM loans WHERE user_id = ? AND returned_at IS NULL`,
-			member.ID).Scan(&active); err != nil {
+			member.ID).Scan(&b.ActiveLoans); err != nil {
 			return err
 		}
-		if err := policy.CanBorrow(domain.Borrower{CardExpires: member.CardExpires, ActiveLoans: active}, req.Today); err != nil {
+		if b.FinesOwed, err = finesOwed(ctx, tx, member.ID); err != nil {
+			return err
+		}
+		if err := policy.CanBorrow(b, req.Today); err != nil {
 			return err
 		}
 
@@ -182,20 +185,25 @@ func (s *Store) Checkout(ctx context.Context, req CheckoutRequest) (LoanRow, err
 type ReturnResult struct {
 	Loan LoanRow
 	Hold *HoldRow
+	// Fine is the late fine charged, in cents.
+	Fine int
 }
 
 // Return checks a copy back in. If someone is waiting for the title the
 // copy is set aside for them instead of going back on the shelf.
 func (s *Store) Return(ctx context.Context, barcode string, today domain.Date, now time.Time) (ReturnResult, error) {
 	var loanID, holdID int64
+	var fine int
 	err := s.inTx(ctx, func(tx *sql.Tx) error {
 		policy, err := loadPolicy(ctx, tx)
 		if err != nil {
 			return err
 		}
-		var copyID int64
-		err = tx.QueryRowContext(ctx, `SELECT l.id, l.copy_id FROM loans l JOIN copies c ON c.id = l.copy_id
-			WHERE c.barcode = ? AND l.returned_at IS NULL`, barcode).Scan(&loanID, &copyID)
+		var copyID, userID int64
+		var dueOn string
+		err = tx.QueryRowContext(ctx, `SELECT l.id, l.copy_id, l.user_id, l.due_on FROM loans l
+			JOIN copies c ON c.id = l.copy_id
+			WHERE c.barcode = ? AND l.returned_at IS NULL`, barcode).Scan(&loanID, &copyID, &userID, &dueOn)
 		if errors.Is(err, sql.ErrNoRows) {
 			if _, err := scanCopy(tx.QueryRowContext(ctx, `SELECT `+copyColumns+` FROM copies WHERE barcode = ?`, barcode)); err != nil {
 				return err
@@ -208,13 +216,23 @@ func (s *Store) Return(ctx context.Context, barcode string, today domain.Date, n
 		if _, err := tx.ExecContext(ctx, `UPDATE loans SET returned_at = ? WHERE id = ?`, fmtTime(now), loanID); err != nil {
 			return err
 		}
+		due, err := domain.ParseDate(dueOn)
+		if err != nil {
+			return err
+		}
+		if fine = policy.LateFine(due, today); fine > 0 {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO fines (user_id, loan_id, kind, amount_cents, created_at)
+				VALUES (?, ?, 'late', ?, ?)`, userID, loanID, fine, fmtTime(now)); err != nil {
+				return err
+			}
+		}
 		holdID, err = shelveCopy(ctx, tx, copyID, policy, today)
 		return err
 	})
 	if err != nil {
 		return ReturnResult{}, err
 	}
-	var res ReturnResult
+	res := ReturnResult{Fine: fine}
 	if res.Loan, err = s.LoanByID(ctx, loanID); err != nil {
 		return ReturnResult{}, err
 	}

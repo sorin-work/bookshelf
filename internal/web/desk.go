@@ -94,6 +94,9 @@ func (s *Server) deskCheckout(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, domain.ErrCardExpired):
 		fail(member.Name + "'s card expired on " + member.CardExpires.Format("2 Jan 2006") + ". Renew it on their member page.")
 		return
+	case errors.Is(err, domain.ErrFinesOwed):
+		fail(member.Name + " has unpaid fines over the borrowing limit. Take a payment on their member page first.")
+		return
 	case errors.Is(err, domain.ErrTooManyLoans):
 		fail(member.Name + " already has as many items out as the library allows.")
 		return
@@ -133,6 +136,14 @@ func (s *Server) deskReturn(w http.ResponseWriter, r *http.Request) {
 		msg := fmt.Sprintf("%s checked in from %s.", loan.Title, loan.MemberName)
 		if late := loan.Rules().DaysOverdue(s.today()); late > 0 {
 			msg += fmt.Sprintf(" It was %d %s late.", late, plural(late, "day", "days"))
+		}
+		if res.Fine > 0 {
+			policy, err := s.store.Policy(r.Context())
+			if err != nil {
+				s.serverError(w, r, err)
+				return
+			}
+			msg += " A late fine of " + policy.FormatMoney(res.Fine) + " was added to their account."
 		}
 		d.Result = &deskResult{OK: true, Message: msg, Loan: &loan, Hold: res.Hold}
 	}

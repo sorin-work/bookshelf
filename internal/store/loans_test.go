@@ -176,3 +176,49 @@ func TestPolicyDefaultsAndSave(t *testing.T) {
 		t.Error("invalid policy saved")
 	}
 }
+
+func TestLateReturnChargesFine(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	l, err := f.checkout(t, "B1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := f.s.Return(ctx, "B1", l.Due.AddDays(60), now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Fine != 500 {
+		t.Errorf("fine %d, want the 500 cap", res.Fine)
+	}
+	owed, _ := f.s.FinesOwed(ctx, f.member.ID)
+	if owed != 500 {
+		t.Errorf("owed %d", owed)
+	}
+	fines, _ := f.s.Fines(ctx, f.member.ID, 10)
+	if len(fines) != 1 || fines[0].Title != "Dune" || fines[0].Kind != "late" {
+		t.Errorf("fines %+v", fines)
+	}
+
+	if _, err := f.s.AddCharge(ctx, f.member.ID, 600, "Coffee on pages 20-40", now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.checkout(t, "B2"); !errors.Is(err, domain.ErrFinesOwed) {
+		t.Errorf("checkout owing 11.00: %v", err)
+	}
+	if err := f.s.ResolveFine(ctx, fines[0].ID, FinePaid, f.staff.ID, now); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.s.ResolveFine(ctx, fines[0].ID, FineWaived, f.staff.ID, now); !errors.Is(err, ErrFineClosed) {
+		t.Errorf("resolve twice: %v", err)
+	}
+	if _, err := f.checkout(t, "B2"); err != nil {
+		t.Errorf("checkout after paying: %v", err)
+	}
+
+	// Returned on time: no fine.
+	res, err = f.s.Return(ctx, "B2", f.today, now)
+	if err != nil || res.Fine != 0 {
+		t.Errorf("on time return: %d, %v", res.Fine, err)
+	}
+}
