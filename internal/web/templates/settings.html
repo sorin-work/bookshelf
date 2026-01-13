@@ -42,6 +42,40 @@
       </div>
     </fieldset>
     <fieldset>
+      <legend>Fines</legend>
+      <div class="row">
+        <div class="field">
+          <label for="fine_per_day">Fine per day late</label>
+          <input id="fine_per_day" name="fine_per_day" inputmode="decimal" value="{{index $d.Values "fine_per_day"}}">
+          {{template "field_error" index $d.Errors "fine_per_day"}}
+        </div>
+        <div class="field">
+          <label for="fine_cap">Most one item can cost</label>
+          <input id="fine_cap" name="fine_cap" inputmode="decimal" value="{{index $d.Values "fine_cap"}}">
+          <p class="hint">0 means no cap.</p>
+          {{template "field_error" index $d.Errors "fine_cap"}}
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="grace_days">Grace days</label>
+          <input id="grace_days" name="grace_days" inputmode="numeric" value="{{index $d.Values "grace_days"}}">
+          <p class="hint">Items this many days late or less cost nothing.</p>
+          {{template "field_error" index $d.Errors "grace_days"}}
+        </div>
+        <div class="field">
+          <label for="block_at">Stop lending once a member owes</label>
+          <input id="block_at" name="block_at" inputmode="decimal" value="{{index $d.Values "block_at"}}">
+          <p class="hint">0 never stops lending.</p>
+          {{template "field_error" index $d.Errors "block_at"}}
+        </div>
+      </div>
+      <div class="field narrow-field">
+        <label for="currency">Currency symbol</label>
+        <input id="currency" name="currency" value="{{index $d.Values "currency"}}" maxlength="4">
+      </div>
+    </fieldset>
+    <fieldset>
       <legend>Closed on</legend>
       <p class="hint">Nothing falls due on a day the library is closed.</p>
       <div class="checkboxes">

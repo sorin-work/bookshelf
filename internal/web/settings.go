@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -29,7 +30,22 @@ func policyFields(p *domain.Policy) map[string]*int {
 		"max_loans":    &p.MaxLoans,
 		"pickup_days":  &p.HoldPickupDays,
 		"max_holds":    &p.MaxHolds,
+		"grace_days":   &p.FineGraceDays,
 	}
+}
+
+// moneyFields are the policy settings entered as amounts and kept in
+// cents.
+func moneyFields(p *domain.Policy) map[string]*int {
+	return map[string]*int{
+		"fine_per_day": &p.FinePerDay,
+		"fine_cap":     &p.FineCap,
+		"block_at":     &p.BlockAt,
+	}
+}
+
+func centsText(c int) string {
+	return strconv.Itoa(c/100) + "." + fmt.Sprintf("%02d", c%100)
 }
 
 func settingsData(p domain.Policy) settingsPage {
@@ -37,6 +53,10 @@ func settingsData(p domain.Policy) settingsPage {
 	for name, v := range policyFields(&p) {
 		d.Values[name] = strconv.Itoa(*v)
 	}
+	for name, v := range moneyFields(&p) {
+		d.Values[name] = centsText(*v)
+	}
+	d.Values["currency"] = p.Currency
 	closed := map[time.Weekday]bool{}
 	for _, c := range p.ClosedDays {
 		closed[c] = true
@@ -80,6 +100,18 @@ func (s *Server) saveSettings(w http.ResponseWriter, r *http.Request) {
 		}
 		*dst = n
 	}
+	for name, dst := range moneyFields(&p) {
+		v := strings.TrimSpace(r.PostForm.Get(name))
+		raw[name] = v
+		n, err := domain.ParseMoney(v)
+		if err != nil {
+			errs[name] = "Enter an amount, like 0.25."
+			continue
+		}
+		*dst = n
+	}
+	p.Currency = strings.TrimSpace(r.PostForm.Get("currency"))
+	raw["currency"] = p.Currency
 	p.ClosedDays = nil
 	for _, v := range r.PostForm["closed"] {
 		n, err := strconv.Atoi(v)
