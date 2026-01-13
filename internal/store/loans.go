@@ -103,6 +103,32 @@ func (s *Store) LoanHistory(ctx context.Context, userID int64, limit int) ([]Loa
 		ORDER BY l.returned_at DESC LIMIT ?`, userID, limit)
 }
 
+// OverdueLoan is an open loan past its due date with the member's contact
+// details, for chasing it up.
+type OverdueLoan struct {
+	LoanRow
+	Email string
+	Phone string
+}
+
+// OverdueLoans lists open loans due before today, longest overdue first.
+func (s *Store) OverdueLoans(ctx context.Context, today domain.Date) ([]OverdueLoan, error) {
+	loans, err := queryLoans(ctx, s.db, `WHERE l.returned_at IS NULL AND l.due_on < ?
+		ORDER BY l.due_on, u.name COLLATE NOCASE`, today.String())
+	if err != nil {
+		return nil, err
+	}
+	out := make([]OverdueLoan, 0, len(loans))
+	for _, l := range loans {
+		u, err := s.UserByID(ctx, l.UserID)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, OverdueLoan{LoanRow: l, Email: u.Email, Phone: u.Phone})
+	}
+	return out, nil
+}
+
 type CheckoutRequest struct {
 	UserID  int64
 	Barcode string

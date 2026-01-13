@@ -1,0 +1,27 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="page-head">
+  <h1>Overdue</h1>
+  {{if $d.Loans}}<p class="muted">{{len $d.Loans}} {{if eq (len $d.Loans) 1}}item{{else}}items{{end}}, {{money $d.Total $d.Currency}} in fines so far</p>{{end}}
+</div>
+{{if $d.Loans}}
+<table class="table">
+  <thead><tr><th>Title</th><th>Copy</th><th>Member</th><th>Contact</th><th>Due</th><th>Late</th><th>Fine so far</th></tr></thead>
+  <tbody>
+  {{range $d.Loans}}
+    <tr>
+      <td><a href="/titles/{{.TitleID}}">{{.Title}}</a></td>
+      <td><code>{{.Barcode}}</code></td>
+      <td><a href="/members/{{.UserID}}">{{.MemberName}}</a></td>
+      <td><a href="mailto:{{.Email}}">{{.Email}}</a>{{with .Phone}}<br><span class="muted">{{.}}</span>{{end}}</td>
+      <td>{{.Due.Format "2 Jan"}}</td>
+      <td>{{.DaysOverdue}} {{if eq .DaysOverdue 1}}day{{else}}days{{end}}</td>
+      <td>{{money .Fine $d.Currency}}</td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="empty">Nothing is overdue. Everyone's been good.</p>
+{{end}}
+{{end}}
