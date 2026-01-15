@@ -89,6 +89,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /holds/{id}/cancel", s.requireUser(s.cancelHold))
 	mux.HandleFunc("GET /holds", s.requireLibrarian(s.holds))
 	mux.HandleFunc("GET /overdue", s.requireLibrarian(s.overdue))
+	mux.HandleFunc("GET /dashboard", s.requireLibrarian(s.dashboard))
 
 	mux.HandleFunc("GET /desk", s.requireLibrarian(s.desk))
 	mux.HandleFunc("POST /desk/checkout", s.requireLibrarian(s.deskCheckout))
@@ -128,5 +129,9 @@ func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) home(w http.ResponseWriter, r *http.Request) {
+	if u := currentUser(r); u != nil && u.IsLibrarian() {
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		return
+	}
 	s.render(w, r, http.StatusOK, "home.html", page{Title: "Welcome"})
 }

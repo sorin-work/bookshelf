@@ -1,0 +1,47 @@
+{{define "content"}}
+{{$d := .Data}}{{$s := $d.Stats}}
+<div class="page-head">
+  <h1>Today at the library</h1>
+  <a class="button" href="/desk">Open the desk</a>
+</div>
+<div class="stats">
+  <a class="stat" href="/desk"><span class="stat-value">{{$s.CheckoutsToday}}</span><span class="stat-label">checked out today</span></a>
+  <a class="stat" href="/desk"><span class="stat-value">{{$s.ReturnsToday}}</span><span class="stat-label">returned today</span></a>
+  <div class="stat"><span class="stat-value">{{$s.OnLoan}}</span><span class="stat-label">on loan</span></div>
+  <a class="stat{{if $s.Overdue}} warn{{end}}" href="/overdue"><span class="stat-value">{{$s.Overdue}}</span><span class="stat-label">overdue</span></a>
+  <div class="stat"><span class="stat-value">{{$s.DueToday}}</span><span class="stat-label">due back today</span></div>
+  <a class="stat" href="/holds"><span class="stat-value">{{$s.HoldsReady}}</span><span class="stat-label">on the hold shelf</span></a>
+  <a class="stat" href="/holds"><span class="stat-value">{{$s.HoldsWaiting}}</span><span class="stat-label">holds waiting</span></a>
+  <div class="stat"><span class="stat-value">{{money $s.FinesOwed $d.Currency}}</span><span class="stat-label">unpaid fines</span></div>
+</div>
+
+<div class="grid-2">
+  <section>
+    <h2>Popular this month</h2>
+    {{if $d.Popular}}
+    <ol class="popular">
+      {{range $d.Popular}}<li><a href="/titles/{{.TitleID}}">{{.Title}}</a> <span class="muted">{{.Checkouts}} {{if eq .Checkouts 1}}loan{{else}}loans{{end}}</span></li>{{end}}
+    </ol>
+    {{else}}<p class="muted">No loans in the last 30 days.</p>{{end}}
+  </section>
+  <section>
+    <h2>Recent activity</h2>
+    {{if $d.Activity}}
+    <ul class="activity">
+      {{range $d.Activity}}
+      <li>
+        <span class="muted">{{.At.Format "2 Jan 15:04"}}</span>
+        <a href="/members/{{.UserID}}">{{.MemberName}}</a> {{if eq .Kind "checkout"}}borrowed{{else}}returned{{end}}
+        <a href="/titles/{{.TitleID}}">{{.Title}}</a>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}<p class="muted">Nothing yet.</p>{{end}}
+  </section>
+</div>
+
+<section>
+  <h2>Collection</h2>
+  <p class="muted">{{$s.Titles}} titles, {{$s.Copies}} copies in circulation ({{$s.Available}} on the shelf), {{$s.Members}} members.</p>
+</section>
+{{end}}
