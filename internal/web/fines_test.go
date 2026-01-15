@@ -50,3 +50,14 @@ func TestAddChargeValidation(t *testing.T) {
 		wantStatus(t, r, http.StatusUnprocessableEntity)
 	}
 }
+
+func TestOverdueList(t *testing.T) {
+	c := newCirc(t)
+	c.checkout("C01")
+	wantBody(t, c.lib.get("/overdue"), "Nothing is overdue")
+
+	c.env.now = c.env.now.AddDate(0, 0, 22) // one day late
+	r := c.lib.get("/overdue")
+	wantBody(t, r, "Dune", "Mo Member", "mo@example.com", "1 day", "€0.25")
+	wantStatus(t, c.member.get("/overdue"), http.StatusForbidden)
+}

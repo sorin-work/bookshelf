@@ -15,7 +15,7 @@ func (p Policy) LateFine(due, returned Date) int {
 	if !returned.After(due) {
 		return 0
 	}
-	days := due.DaysUntil(returned) + 1
+	days := due.DaysUntil(returned)
 	if days <= p.FineGraceDays {
 		return 0
 	}
