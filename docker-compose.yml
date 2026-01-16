@@ -6,6 +6,8 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LIBRARY_TIMEZONE: ${LIBRARY_TIMEZONE:-UTC}
+      # Creates demo@example.com / demo-password with sample data on first start.
+      SEED_DEMO: ${SEED_DEMO:-true}
       # Leave false for plain http on localhost; set true behind https.
       SECURE_COOKIES: ${SECURE_COOKIES:-false}
     volumes:

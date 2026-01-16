@@ -16,6 +16,7 @@ import (
 	"github.com/sorin-work/bookshelf/internal/config"
 	"github.com/sorin-work/bookshelf/internal/db"
 	"github.com/sorin-work/bookshelf/internal/domain"
+	"github.com/sorin-work/bookshelf/internal/seed"
 	"github.com/sorin-work/bookshelf/internal/store"
 	"github.com/sorin-work/bookshelf/internal/web"
 )
@@ -55,6 +56,12 @@ func run() error {
 		return fmt.Errorf("issue library cards: %w", err)
 	} else if n > 0 {
 		log.Info("issued library cards to existing accounts", "count", n)
+	}
+
+	if cfg.SeedDemo {
+		if err := seed.Demo(ctx, st, seed.Options{Now: time.Now(), Location: cfg.Location, Logger: log}); err != nil {
+			return fmt.Errorf("seed demo data: %w", err)
+		}
 	}
 
 	app, err := web.New(web.Options{
