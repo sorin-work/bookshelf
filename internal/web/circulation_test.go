@@ -140,3 +140,21 @@ func TestDueDateUsesLibraryTimeZone(t *testing.T) {
 	r := c.checkout("C01")
 	wantBody(t, r, "Due Wed 1 Apr")
 }
+
+func TestRenewWithHTMXSwapsTheRow(t *testing.T) {
+	c := newCirc(t)
+	c.checkout("C01")
+	loans, _ := c.env.store.ActiveLoans(t.Context(), c.mo.ID)
+	path := "/loans/" + itoa(loans[0].ID) + "/renew"
+
+	req, _ := http.NewRequest(http.MethodPost, c.env.srv.URL+path,
+		strings.NewReader(titleValues("csrf_token", c.member.csrf()).Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+	r := c.member.do(req)
+	wantStatus(t, r, http.StatusOK)
+	wantBody(t, r, `<tr id="loan-`+itoa(loans[0].ID)+`"`, "Renewed")
+	if contains(r.body, "<html") {
+		t.Error("got a whole page")
+	}
+}

@@ -234,3 +234,4 @@ a.stat:hover { border-color: var(--accent); }
 ol.popular, ul.activity { padding-left: 1.25rem; }
 ul.activity { list-style: none; padding: 0; }
 ul.activity li { padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+.notice { color: var(--ok); font-weight: 600; margin-right: 0.75rem; }

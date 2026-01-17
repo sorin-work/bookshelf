@@ -15,6 +15,8 @@ type loanLine struct {
 	DaysOverdue int
 	CanRenew    bool
 	WhyNot      string
+	// Notice is a one-off message shown in the row after an htmx renewal.
+	Notice string
 }
 
 func (s *Server) loanLines(r *http.Request, loans []store.LoanRow) ([]loanLine, error) {
@@ -75,20 +77,37 @@ func (s *Server) renewLoan(w http.ResponseWriter, r *http.Request) {
 	if back == "" {
 		back = "/account"
 	}
-	if _, err := s.store.Renew(r.Context(), id, s.today()); err != nil {
-		switch {
-		case errors.Is(err, domain.ErrRenewalLimit), errors.Is(err, domain.ErrRenewOverdue),
-			errors.Is(err, domain.ErrRenewHeld), errors.Is(err, store.ErrNotOnLoan):
-			http.Error(w, renewalMessage(err)+".", http.StatusConflict)
-		default:
-			s.serverError(w, r, err)
-		}
+	renewed, err := s.store.Renew(r.Context(), id, s.today())
+	ruleErr := errors.Is(err, domain.ErrRenewalLimit) || errors.Is(err, domain.ErrRenewOverdue) ||
+		errors.Is(err, domain.ErrRenewHeld) || errors.Is(err, store.ErrNotOnLoan)
+	if err != nil && !ruleErr {
+		s.serverError(w, r, err)
 		return
 	}
-	s.log.Info("loan renewed", "loan_id", id, "by", user.ID)
-	renewed, err := s.store.LoanByID(r.Context(), id)
 	if err == nil {
-		s.setFlash(w, renewed.Title+" renewed. It's now due "+renewed.Due.Format("Monday 2 January")+".")
+		s.log.Info("loan renewed", "loan_id", id, "by", user.ID)
 	}
+
+	if isHTMX(r) {
+		// Swap the table row in place.
+		if err == nil {
+			l = renewed
+		}
+		lines, lerr := s.loanLines(r, []store.LoanRow{l})
+		if lerr != nil {
+			s.serverError(w, r, lerr)
+			return
+		}
+		if err == nil {
+			lines[0].Notice = "Renewed"
+		}
+		s.execute(w, r, http.StatusOK, "account.html", "loan_row_fragment", page{Data: lines[0]})
+		return
+	}
+	if ruleErr {
+		http.Error(w, renewalMessage(err)+".", http.StatusConflict)
+		return
+	}
+	s.setFlash(w, renewed.Title+" renewed. It's now due "+renewed.Due.Format("Monday 2 January")+".")
 	http.Redirect(w, r, back, http.StatusSeeOther)
 }
