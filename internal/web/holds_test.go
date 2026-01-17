@@ -75,3 +75,28 @@ func TestHoldsNeedLogin(t *testing.T) {
 		t.Errorf("anonymous hold: %d %s", r.status, r.location)
 	}
 }
+
+// htmx buttons outside a form send the CSRF token in a header set on the
+// body, not as a form field.
+func TestCancelHoldWithHTMXHeader(t *testing.T) {
+	c := newCirc(t)
+	c.checkout("C01")
+	c.checkout("C02")
+	ana := c.env.member("Ana Reader", "ana@example.com")
+	ana.post(c.title+"/hold", nil)
+	anaUser, _ := c.env.store.UserByEmail(t.Context(), "ana@example.com")
+	holds, _ := c.env.store.OpenHolds(t.Context(), anaUser.ID)
+
+	page := ana.get("/account")
+	wantBody(t, page, `hx-headers='{"X-CSRF-Token": "`+ana.csrf()+`"}'`)
+
+	req, _ := http.NewRequest(http.MethodPost, c.env.srv.URL+"/holds/"+itoa(holds[0].ID)+"/cancel", nil)
+	req.Header.Set("HX-Request", "true")
+	req.Header.Set("X-CSRF-Token", ana.csrf())
+	r := ana.do(req)
+	wantStatus(t, r, http.StatusOK)
+	if r.body != "" {
+		t.Errorf("expected an empty body, got %q", r.body)
+	}
+	wantBody(t, ana.get("/account"), "No holds.")
+}
