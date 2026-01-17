@@ -81,6 +81,11 @@ func (s *Server) cancelHold(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.log.Info("hold cancelled", "hold_id", id, "by", user.ID)
+	if isHTMX(r) {
+		// The list item is replaced with nothing.
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	s.setFlash(w, "Hold on "+h.Title+" cancelled.")
 	back := "/account"
 	if user.IsLibrarian() && h.UserID != user.ID {

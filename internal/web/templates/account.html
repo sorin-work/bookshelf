@@ -34,7 +34,8 @@
           <p class="muted">Number {{.Position}} in the queue, placed {{date .PlacedAt}}</p>
         {{end}}
       </div>
-      <form method="post" action="/holds/{{.ID}}/cancel" class="inline">{{template "csrf" $}}<button type="submit" class="link">Cancel hold</button></form>
+      <button type="button" class="link" hx-post="/holds/{{.ID}}/cancel"
+              hx-confirm="Cancel your hold on {{.Title}}?" hx-target="closest li" hx-swap="outerHTML">Cancel hold</button>
     </li>
     {{end}}
   </ul>
