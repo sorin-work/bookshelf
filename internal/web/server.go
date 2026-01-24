@@ -68,6 +68,9 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.healthz)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", staticHandler()))
+	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/static/favicon.svg", http.StatusMovedPermanently)
+	})
 	mux.HandleFunc("GET /{$}", s.home)
 
 	mux.HandleFunc("GET /signup", s.signupPage)
