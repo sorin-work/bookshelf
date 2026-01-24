@@ -3,7 +3,7 @@
 <div id="desk-result" aria-live="polite">{{template "desk_result" .}}</div>
 <div class="grid-2">
   <form method="post" action="/desk/checkout" class="card"
-        hx-post="/desk/checkout" hx-target="#desk-result" hx-on::after-request="if(event.detail.successful) this.barcode.value=''; this.barcode.focus()">
+        hx-post="/desk/checkout" hx-target="#desk-result" data-scan>
     {{template "csrf" .}}
     <h2>Check out</h2>
     <div class="field">
@@ -17,7 +17,7 @@
     <button type="submit">Check out</button>
   </form>
   <form method="post" action="/desk/return" class="card"
-        hx-post="/desk/return" hx-target="#desk-result" hx-on::after-request="this.barcode.value=''; this.barcode.focus()">
+        hx-post="/desk/return" hx-target="#desk-result" data-scan>
     {{template "csrf" .}}
     <h2>Check in</h2>
     <div class="field">
