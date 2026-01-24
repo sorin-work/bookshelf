@@ -113,7 +113,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /members/{id}/charges", s.requireLibrarian(s.addCharge))
 	mux.HandleFunc("POST /fines/{id}/resolve", s.requireLibrarian(s.resolveFine))
 
-	return s.recoverPanics(s.logRequests(s.csrf(s.loadUser(mux))))
+	return s.recoverPanics(s.logRequests(securityHeaders(s.csrf(s.loadUser(mux)))))
 }
 
 // today is the current calendar day at the library.

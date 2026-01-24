@@ -13,6 +13,17 @@ func TestHealthz(t *testing.T) {
 	wantStatus(t, r, http.StatusOK)
 }
 
+func TestSecurityHeaders(t *testing.T) {
+	env := newTestEnv(t)
+	r := env.client().get("/")
+	if csp := r.header.Get("Content-Security-Policy"); !contains(csp, "default-src 'self'") {
+		t.Errorf("Content-Security-Policy = %q", csp)
+	}
+	if r.header.Get("X-Frame-Options") != "DENY" || r.header.Get("X-Content-Type-Options") != "nosniff" {
+		t.Errorf("headers %v", r.header)
+	}
+}
+
 func TestSignupLoginLogout(t *testing.T) {
 	env := newTestEnv(t)
 	c := env.client()

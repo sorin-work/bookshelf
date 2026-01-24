@@ -56,3 +56,25 @@ func (s *Server) recoverPanics(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// contentSecurityPolicy only allows our own scripts and styles plus htmx
+// from unpkg. Covers come from wherever the librarian points them, so
+// images may load from any https site.
+const contentSecurityPolicy = "default-src 'self'; " +
+	"script-src 'self' https://unpkg.com; " +
+	"style-src 'self'; " +
+	"img-src 'self' https: data:; " +
+	"form-action 'self'; " +
+	"frame-ancestors 'none'; " +
+	"base-uri 'self'"
+
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("Content-Security-Policy", contentSecurityPolicy)
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("X-Frame-Options", "DENY")
+		h.Set("Referrer-Policy", "same-origin")
+		next.ServeHTTP(w, r)
+	})
+}
