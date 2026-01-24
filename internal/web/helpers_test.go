@@ -23,6 +23,8 @@ import (
 
 func init() { auth.Cost = bcrypt.MinCost }
 
+const testSessionTTL = 365 * 24 * time.Hour
+
 // testNow is the fixed "current time" handlers see in tests.
 var testNow = time.Date(2026, time.March, 10, 14, 0, 0, 0, time.UTC)
 
@@ -55,7 +57,9 @@ func newTestEnvIn(t *testing.T, loc *time.Location) *testEnv {
 		Store:    env.store,
 		Logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
 		Location: loc,
-		Now:      func() time.Time { return env.now },
+		// Long enough for tests that move the clock forward by months.
+		SessionTTL: testSessionTTL,
+		Now:        func() time.Time { return env.now },
 	})
 	if err != nil {
 		t.Fatal(err)

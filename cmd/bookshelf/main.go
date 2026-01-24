@@ -115,7 +115,8 @@ func newLogger(cfg config.Config) *slog.Logger {
 }
 
 // expireHolds closes uncollected holds once at start and then every hour,
-// handing their copies to the next member in each queue.
+// handing their copies to the next member in each queue. It also clears
+// out expired sessions.
 func expireHolds(ctx context.Context, st *store.Store, loc *time.Location, log *slog.Logger) {
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
@@ -127,6 +128,9 @@ func expireHolds(ctx context.Context, st *store.Store, loc *time.Location, log *
 			log.Error("expire holds", "err", err)
 		case n > 0:
 			log.Info("expired uncollected holds", "count", n)
+		}
+		if _, err := st.DeleteExpiredSessions(ctx, now); err != nil && ctx.Err() == nil {
+			log.Error("delete expired sessions", "err", err)
 		}
 		select {
 		case <-ctx.Done():

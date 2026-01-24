@@ -33,7 +33,7 @@ func (s *Server) loadUser(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		u, err := s.store.SessionUser(r.Context(), auth.HashToken(c.Value))
+		u, err := s.store.SessionUser(r.Context(), auth.HashToken(c.Value), s.now())
 		switch {
 		case errors.Is(err, store.ErrNotFound):
 			s.clearSessionCookie(w)

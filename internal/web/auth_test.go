@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 )
 
 func TestHealthz(t *testing.T) {
@@ -104,4 +105,17 @@ func TestFirstAccountIsLibrarian(t *testing.T) {
 	if !first.IsLibrarian() || second.IsLibrarian() {
 		t.Errorf("roles: first %s, second %s", first.Role, second.Role)
 	}
+}
+
+func TestSessionExpires(t *testing.T) {
+	env := newTestEnv(t)
+	c := env.client()
+	c.signup("Ana", "ana@example.com", "long enough")
+	wantStatus(t, c.get("/account"), http.StatusOK)
+
+	// The cookie outlives the session in this test; the server must still
+	// refuse it.
+	env.now = env.now.Add(testSessionTTL + time.Hour)
+	r := c.get("/account")
+	wantRedirect(t, r, "/login?next=%2Faccount")
 }
