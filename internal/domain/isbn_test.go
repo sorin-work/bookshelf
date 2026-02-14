@@ -19,6 +19,7 @@ func TestNormalizeISBN(t *testing.T) {
 		{"isbn-10 converted", "0306406152", "9780306406157", nil},
 		{"isbn-10 hyphenated", "0-306-40615-2", "9780306406157", nil},
 		{"isbn-10 with X", "080442957X", "9780804429573", nil},
+		{"isbn-10 with lower case x", "0-8044-2957-x", "9780804429573", nil},
 		{"isbn-13 bad checksum", "9780306406158", "", ErrISBNChecksum},
 		{"isbn-10 bad checksum", "0306406153", "", ErrISBNChecksum},
 		{"isbn-13 bad prefix", "1230306406157", "", ErrISBNPrefix},

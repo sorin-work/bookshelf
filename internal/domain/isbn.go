@@ -44,8 +44,12 @@ func NormalizeISBN(s string) (string, error) {
 func stripISBN(s string) string {
 	var b strings.Builder
 	for _, r := range strings.TrimSpace(s) {
-		if r == '-' || r == ' ' {
+		switch r {
+		case '-', ' ':
 			continue
+		case 'x':
+			// Typed by hand the check digit is often lower case.
+			r = 'X'
 		}
 		b.WriteRune(r)
 	}
