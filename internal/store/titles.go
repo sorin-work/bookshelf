@@ -207,8 +207,8 @@ type TitleSummary struct {
 	Authors  string
 	Year     int
 	CoverURL string
-	// Copies counts every copy that is not withdrawn; Available only the
-	// ones on the shelf.
+	// Copies counts the copies that circulate (not lost or withdrawn);
+	// Available only the ones on the shelf.
 	Copies    int
 	Available int
 }
@@ -244,7 +244,7 @@ func (s *Store) ListTitles(ctx context.Context, f TitleFilter) ([]TitleSummary, 
 		coalesce((SELECT group_concat(name, ', ') FROM (
 			SELECT a.name FROM title_authors ta JOIN authors a ON a.id = ta.author_id
 			WHERE ta.title_id = t.id ORDER BY ta.position)), ''),
-		(SELECT count(*) FROM copies c WHERE c.title_id = t.id AND c.status != 'withdrawn'),
+		(SELECT count(*) FROM copies c WHERE c.title_id = t.id AND c.status NOT IN ('lost', 'withdrawn')),
 		(SELECT count(*) FROM copies c WHERE c.title_id = t.id AND c.status = 'available')
 		FROM titles t `+where+`
 		ORDER BY t.title COLLATE NOCASE, t.id

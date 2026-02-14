@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sorin-work/bookshelf/internal/db"
+	"github.com/sorin-work/bookshelf/internal/domain"
 )
 
 var now = time.Date(2026, time.January, 5, 18, 0, 0, 0, time.UTC)
@@ -128,5 +129,34 @@ func TestListTitlesSearch(t *testing.T) {
 	got, _, _ := s.ListTitles(ctx, TitleFilter{Query: "dahl"})
 	if got[0].Authors != "Roald Dahl" {
 		t.Errorf("authors column = %q", got[0].Authors)
+	}
+}
+
+func TestListTitlesCountsOnlyCirculatingCopies(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	id, err := s.CreateTitle(ctx, TitleInput{Title: "Matilda"}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, b := range []string{"M-1", "M-2", "M-3"} {
+		if _, err := s.CreateCopy(ctx, id, CopyInput{Barcode: b}, now); err != nil {
+			t.Fatal(err)
+		}
+	}
+	lost, _ := s.CopyByBarcode(ctx, "M-1")
+	gone, _ := s.CopyByBarcode(ctx, "M-2")
+	if err := s.SetCopyStatus(ctx, lost.ID, domain.CopyLost); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetCopyStatus(ctx, gone.ID, domain.CopyWithdrawn); err != nil {
+		t.Fatal(err)
+	}
+	got, _, err := s.ListTitles(ctx, TitleFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got[0].Copies != 1 || got[0].Available != 1 {
+		t.Errorf("copies %d, available %d; want 1 and 1", got[0].Copies, got[0].Available)
 	}
 }
