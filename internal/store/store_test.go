@@ -89,6 +89,8 @@ func TestListTitlesSearch(t *testing.T) {
 		{Title: "The Hobbit", Authors: []string{"J. R. R. Tolkien"}},
 		{Title: "Matilda", Authors: []string{"Roald Dahl"}},
 		{Title: "The BFG", Authors: []string{"Roald Dahl"}},
+		{Title: "100% Wolf", Authors: []string{"Jayne Lyons"}},
+		{Title: "Snake_case for Beginners"},
 	} {
 		if _, err := s.CreateTitle(ctx, in, now); err != nil {
 			t.Fatal(err)
@@ -99,7 +101,11 @@ func TestListTitlesSearch(t *testing.T) {
 		q    string
 		want []string
 	}{
-		{"", []string{"Matilda", "The BFG", "The Hobbit"}},
+		{"", []string{"100% Wolf", "Matilda", "Snake_case for Beginners", "The BFG", "The Hobbit"}},
+		{"%", []string{"100% Wolf"}},
+		{"0% w", []string{"100% Wolf"}},
+		{"_", []string{"Snake_case for Beginners"}},
+		{`\`, nil},
 		{"dahl", []string{"Matilda", "The BFG"}},
 		{"hobb", []string{"The Hobbit"}},
 		{"nothing like it", nil},

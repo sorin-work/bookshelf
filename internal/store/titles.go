@@ -228,10 +228,10 @@ func (s *Store) ListTitles(ctx context.Context, f TitleFilter) ([]TitleSummary, 
 	where := ""
 	var args []any
 	if q := strings.TrimSpace(f.Query); q != "" {
-		like := "%" + q + "%"
-		where = `WHERE t.title LIKE ? OR t.subtitle LIKE ? OR t.isbn LIKE ?
+		like := likeContains(q)
+		where = `WHERE t.title LIKE ? ESCAPE '\' OR t.subtitle LIKE ? ESCAPE '\' OR t.isbn LIKE ? ESCAPE '\'
 			OR EXISTS (SELECT 1 FROM title_authors ta JOIN authors a ON a.id = ta.author_id
-			           WHERE ta.title_id = t.id AND a.name LIKE ?)`
+			           WHERE ta.title_id = t.id AND a.name LIKE ? ESCAPE '\')`
 		args = append(args, like, like, like, like)
 	}
 

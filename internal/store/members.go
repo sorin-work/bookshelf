@@ -22,10 +22,10 @@ func (s *Store) ListMembers(ctx context.Context, f MemberFilter) ([]User, int, e
 	where := ""
 	var args []any
 	if q := strings.TrimSpace(f.Query); q != "" {
-		like := "%" + q + "%"
+		like := likeContains(q)
 		card := strings.NewReplacer(" ", "", "-", "").Replace(q)
-		where = `WHERE name LIKE ? OR email LIKE ? OR card_number LIKE ?`
-		args = append(args, like, like, "%"+card+"%")
+		where = `WHERE name LIKE ? ESCAPE '\' OR email LIKE ? ESCAPE '\' OR card_number LIKE ? ESCAPE '\'`
+		args = append(args, like, like, likeContains(card))
 	}
 	var total int
 	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM users `+where, args...).Scan(&total); err != nil {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -72,4 +73,11 @@ func (s *Store) ids(ctx context.Context, query string, args ...any) ([]int64, er
 		out = append(out, id)
 	}
 	return out, rows.Err()
+}
+
+// likeContains turns user input into a LIKE pattern matching it anywhere,
+// with % and _ matched literally. Use it with ESCAPE '\'.
+func likeContains(q string) string {
+	r := strings.NewReplacer(`\`, `\\`, "%", `\%`, "_", `\_`)
+	return "%" + r.Replace(q) + "%"
 }
