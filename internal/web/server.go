@@ -32,6 +32,7 @@ type Server struct {
 	loc           *time.Location
 	now           func() time.Time
 	pages         map[string]*template.Template
+	logins        *loginLimiter
 }
 
 func New(o Options) (*Server, error) {
@@ -42,6 +43,7 @@ func New(o Options) (*Server, error) {
 		sessionTTL:    o.SessionTTL,
 		loc:           o.Location,
 		now:           o.Now,
+		logins:        newLoginLimiter(5, 15*time.Minute),
 	}
 	if s.loc == nil {
 		s.loc = time.UTC

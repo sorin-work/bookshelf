@@ -130,3 +130,23 @@ func TestSessionExpires(t *testing.T) {
 	r := c.get("/account")
 	wantRedirect(t, r, "/login?next=%2Faccount")
 }
+
+func TestLoginThrottling(t *testing.T) {
+	env := newTestEnv(t)
+	env.client().signup("Ana", "ana@example.com", "long enough")
+
+	for i := 0; i < 5; i++ {
+		wantStatus(t, env.client().login("ana@example.com", "guess"), http.StatusUnauthorized)
+	}
+	// Even the right password is refused while throttled.
+	r := env.client().login("ANA@example.com", "long enough")
+	wantStatus(t, r, http.StatusTooManyRequests)
+	wantBody(t, r, "Too many failed attempts")
+
+	// Other accounts are not affected.
+	env.client().signup("Bo", "bo@example.com", "long enough")
+	wantRedirect(t, env.client().login("bo@example.com", "long enough"), "/")
+
+	env.now = env.now.Add(16 * time.Minute)
+	wantRedirect(t, env.client().login("ana@example.com", "long enough"), "/")
+}

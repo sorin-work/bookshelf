@@ -95,16 +95,25 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	}
 	password := r.PostFormValue("password")
 
+	if !s.logins.Allowed(f.Email, s.now()) {
+		s.log.Warn("login throttled", "email", f.Email)
+		f.Errors["form"] = "Too many failed attempts. Wait a quarter of an hour and try again."
+		s.render(w, r, http.StatusTooManyRequests, "login.html", page{Title: "Log in", Data: f})
+		return
+	}
+
 	u, err := s.store.UserByEmail(r.Context(), f.Email)
 	if err != nil && !errors.Is(err, store.ErrNotFound) {
 		s.serverError(w, r, err)
 		return
 	}
 	if err != nil || !auth.CheckPassword(u.PasswordHash, password) {
+		s.logins.Fail(f.Email, s.now())
 		f.Errors["form"] = "That email and password don't match an account."
 		s.render(w, r, http.StatusUnauthorized, "login.html", page{Title: "Log in", Data: f})
 		return
 	}
+	s.logins.Reset(f.Email)
 	if err := s.startSession(w, r, u.ID); err != nil {
 		s.serverError(w, r, err)
 		return
