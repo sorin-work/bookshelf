@@ -13,7 +13,7 @@
       <td><a href="/titles/{{.TitleID}}">{{.Title}}</a></td>
       <td><code>{{.Barcode}}</code></td>
       <td><a href="/members/{{.UserID}}">{{.MemberName}}</a></td>
-      <td><a href="mailto:{{.Email}}">{{.Email}}</a>{{with .Phone}}<br><span class="muted">{{.}}</span>{{end}}</td>
+      <td><a href="mailto:{{.MemberEmail}}">{{.MemberEmail}}</a>{{with .MemberPhone}}<br><span class="muted">{{.}}</span>{{end}}</td>
       <td>{{.Due.Format "2 Jan"}}</td>
       <td>{{.DaysOverdue}} {{if eq .DaysOverdue 1}}day{{else}}days{{end}}</td>
       <td>{{money .Fine $d.Currency}}</td>

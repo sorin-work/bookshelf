@@ -28,6 +28,8 @@ type LoanRow struct {
 	Title        string
 	UserID       int64
 	MemberName   string
+	MemberEmail  string
+	MemberPhone  string
 	CardNumber   string
 	CheckedOutAt time.Time
 	Due          domain.Date
@@ -44,7 +46,7 @@ func (l LoanRow) Rules() domain.Loan {
 
 func (l LoanRow) Returned() bool { return !l.ReturnedAt.IsZero() }
 
-const loanSelect = `SELECT l.id, l.copy_id, c.barcode, t.id, t.title, u.id, u.name,
+const loanSelect = `SELECT l.id, l.copy_id, c.barcode, t.id, t.title, u.id, u.name, u.email, u.phone,
 	coalesce(u.card_number, ''), l.checked_out_at, l.due_on, l.renewals, coalesce(l.returned_at, ''),
 	(SELECT count(*) FROM holds h WHERE h.title_id = t.id AND h.status = 'waiting')
 	FROM loans l
@@ -56,7 +58,7 @@ func scanLoan(row interface{ Scan(...any) error }) (LoanRow, error) {
 	var l LoanRow
 	var out, due, returned string
 	err := row.Scan(&l.ID, &l.CopyID, &l.Barcode, &l.TitleID, &l.Title, &l.UserID, &l.MemberName,
-		&l.CardNumber, &out, &due, &l.Renewals, &returned, &l.HoldsWaiting)
+		&l.MemberEmail, &l.MemberPhone, &l.CardNumber, &out, &due, &l.Renewals, &returned, &l.HoldsWaiting)
 	if errors.Is(err, sql.ErrNoRows) {
 		return LoanRow{}, ErrNotFound
 	}
@@ -103,30 +105,10 @@ func (s *Store) LoanHistory(ctx context.Context, userID int64, limit int) ([]Loa
 		ORDER BY l.returned_at DESC LIMIT ?`, userID, limit)
 }
 
-// OverdueLoan is an open loan past its due date with the member's contact
-// details, for chasing it up.
-type OverdueLoan struct {
-	LoanRow
-	Email string
-	Phone string
-}
-
 // OverdueLoans lists open loans due before today, longest overdue first.
-func (s *Store) OverdueLoans(ctx context.Context, today domain.Date) ([]OverdueLoan, error) {
-	loans, err := queryLoans(ctx, s.db, `WHERE l.returned_at IS NULL AND l.due_on < ?
+func (s *Store) OverdueLoans(ctx context.Context, today domain.Date) ([]LoanRow, error) {
+	return queryLoans(ctx, s.db, `WHERE l.returned_at IS NULL AND l.due_on < ?
 		ORDER BY l.due_on, u.name COLLATE NOCASE`, today.String())
-	if err != nil {
-		return nil, err
-	}
-	out := make([]OverdueLoan, 0, len(loans))
-	for _, l := range loans {
-		u, err := s.UserByID(ctx, l.UserID)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, OverdueLoan{LoanRow: l, Email: u.Email, Phone: u.Phone})
-	}
-	return out, nil
 }
 
 type CheckoutRequest struct {

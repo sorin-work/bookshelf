@@ -7,7 +7,7 @@ import (
 )
 
 type overdueLine struct {
-	store.OverdueLoan
+	store.LoanRow
 	DaysOverdue int
 	// Fine is what the loan would cost if it came back today.
 	Fine int
@@ -34,7 +34,7 @@ func (s *Server) overdue(w http.ResponseWriter, r *http.Request) {
 	d := overduePage{Currency: policy.Currency}
 	for _, l := range loans {
 		line := overdueLine{
-			OverdueLoan: l,
+			LoanRow:     l,
 			DaysOverdue: l.Rules().DaysOverdue(today),
 			Fine:        policy.LateFine(l.Due, today),
 		}
