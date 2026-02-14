@@ -30,7 +30,7 @@
     <ul class="activity">
       {{range $d.Activity}}
       <li>
-        <span class="muted">{{.At.Format "2 Jan 15:04"}}</span>
+        <span class="muted">{{datetime .At}}</span>
         <a href="/members/{{.UserID}}">{{.MemberName}}</a> {{if eq .Kind "checkout"}}borrowed{{else}}returned{{end}}
         <a href="/titles/{{.TitleID}}">{{.Title}}</a>
       </li>

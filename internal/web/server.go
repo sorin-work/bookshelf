@@ -55,7 +55,7 @@ func New(o Options) (*Server, error) {
 	if s.sessionTTL == 0 {
 		s.sessionTTL = 14 * 24 * time.Hour
 	}
-	pages, err := parsePages()
+	pages, err := parsePages(s.loc)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 	"testing"
+	"time"
 )
 
 func TestDashboard(t *testing.T) {
@@ -23,4 +24,16 @@ func TestDashboard(t *testing.T) {
 		"2 loans",
 	)
 	wantStatus(t, c.member.get("/dashboard"), http.StatusForbidden)
+}
+
+func TestTimesShownInLibraryTimeZone(t *testing.T) {
+	bucharest, err := time.LoadLocation("Europe/Bucharest")
+	if err != nil {
+		t.Skip("no tz database")
+	}
+	c := newCircIn(t, bucharest)
+	c.env.now = time.Date(2026, time.March, 10, 22, 30, 0, 0, time.UTC)
+	c.checkout("C01")
+	wantBody(t, c.lib.get("/dashboard"), "11 Mar 00:30")
+	wantBody(t, c.lib.get("/members/"+itoa(c.mo.ID)), "<dd>10 Mar 2026</dd>")
 }

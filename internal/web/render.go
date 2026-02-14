@@ -30,37 +30,47 @@ type page struct {
 	Data  any
 }
 
-var funcs = template.FuncMap{
-	// args builds a map so a partial can get more than one value:
-	// {{template "loan_table" args "Page" $ "Loans" .Loans}}
-	"args": func(kv ...any) (map[string]any, error) {
-		if len(kv)%2 != 0 {
-			return nil, fmt.Errorf("args needs key/value pairs")
-		}
-		m := make(map[string]any, len(kv)/2)
-		for i := 0; i < len(kv); i += 2 {
-			k, ok := kv[i].(string)
-			if !ok {
-				return nil, fmt.Errorf("args key %v is not a string", kv[i])
+// templateFuncs are the helpers available in every template. Times are
+// shown in the library's time zone.
+func templateFuncs(loc *time.Location) template.FuncMap {
+	return template.FuncMap{
+		// args builds a map so a partial can get more than one value:
+		// {{template "loan_table" args "Page" $ "Loans" .Loans}}
+		"args": func(kv ...any) (map[string]any, error) {
+			if len(kv)%2 != 0 {
+				return nil, fmt.Errorf("args needs key/value pairs")
 			}
-			m[k] = kv[i+1]
-		}
-		return m, nil
-	},
-	"money": func(cents int, currency string) string {
-		return domain.Policy{Currency: currency}.FormatMoney(cents)
-	},
-	"date": func(t time.Time) string {
-		if t.IsZero() {
-			return ""
-		}
-		return t.Format("2 Jan 2006")
-	},
+			m := make(map[string]any, len(kv)/2)
+			for i := 0; i < len(kv); i += 2 {
+				k, ok := kv[i].(string)
+				if !ok {
+					return nil, fmt.Errorf("args key %v is not a string", kv[i])
+				}
+				m[k] = kv[i+1]
+			}
+			return m, nil
+		},
+		"money": func(cents int, currency string) string {
+			return domain.Policy{Currency: currency}.FormatMoney(cents)
+		},
+		"date": func(t time.Time) string {
+			if t.IsZero() {
+				return ""
+			}
+			return t.In(loc).Format("2 Jan 2006")
+		},
+		"datetime": func(t time.Time) string {
+			if t.IsZero() {
+				return ""
+			}
+			return t.In(loc).Format("2 Jan 15:04")
+		},
+	}
 }
 
 // parsePages builds one template set per page so each page can define its
 // own "content" block on top of the shared layout and partials.
-func parsePages() (map[string]*template.Template, error) {
+func parsePages(loc *time.Location) (map[string]*template.Template, error) {
 	names, err := fs.Glob(templateFiles, "templates/*.html")
 	if err != nil {
 		return nil, err
@@ -71,7 +81,7 @@ func parsePages() (map[string]*template.Template, error) {
 		if base == "layout.html" {
 			continue
 		}
-		t, err := template.New(base).Funcs(funcs).ParseFS(templateFiles,
+		t, err := template.New(base).Funcs(templateFuncs(loc)).ParseFS(templateFiles,
 			"templates/layout.html", "templates/partials/*.html", name)
 		if err != nil {
 			return nil, fmt.Errorf("parse %s: %w", base, err)
