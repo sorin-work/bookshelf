@@ -65,59 +65,6 @@ func New(o Options) (*Server, error) {
 	return s, nil
 }
 
-// Handler returns the router with every route and middleware attached.
-func (s *Server) Handler() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", s.healthz)
-	mux.Handle("GET /static/", http.StripPrefix("/static/", staticHandler()))
-	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/static/favicon.svg", http.StatusMovedPermanently)
-	})
-	mux.HandleFunc("GET /{$}", s.home)
-
-	mux.HandleFunc("GET /signup", s.signupPage)
-	mux.HandleFunc("POST /signup", s.signup)
-	mux.HandleFunc("GET /login", s.loginPage)
-	mux.HandleFunc("POST /login", s.login)
-	mux.HandleFunc("POST /logout", s.logout)
-
-	mux.HandleFunc("GET /account", s.requireUser(s.account))
-	mux.HandleFunc("GET /catalogue", s.catalogue)
-	mux.HandleFunc("GET /titles/new", s.requireLibrarian(s.newTitlePage))
-	mux.HandleFunc("POST /titles", s.requireLibrarian(s.createTitle))
-	mux.HandleFunc("GET /titles/{id}", s.titlePage)
-	mux.HandleFunc("GET /titles/{id}/edit", s.requireLibrarian(s.editTitlePage))
-	mux.HandleFunc("POST /titles/{id}", s.requireLibrarian(s.updateTitle))
-	mux.HandleFunc("POST /titles/{id}/copies", s.requireLibrarian(s.addCopy))
-	mux.HandleFunc("POST /copies/{id}/status", s.requireLibrarian(s.setCopyStatus))
-	mux.HandleFunc("POST /titles/{id}/hold", s.requireUser(s.placeHold))
-	mux.HandleFunc("POST /holds/{id}/cancel", s.requireUser(s.cancelHold))
-	mux.HandleFunc("GET /holds", s.requireLibrarian(s.holds))
-	mux.HandleFunc("GET /overdue", s.requireLibrarian(s.overdue))
-	mux.HandleFunc("GET /dashboard", s.requireLibrarian(s.dashboard))
-
-	mux.HandleFunc("GET /desk", s.requireLibrarian(s.desk))
-	mux.HandleFunc("POST /desk/checkout", s.requireLibrarian(s.deskCheckout))
-	mux.HandleFunc("POST /desk/return", s.requireLibrarian(s.deskReturn))
-	mux.HandleFunc("POST /loans/{id}/renew", s.requireUser(s.renewLoan))
-
-	mux.HandleFunc("GET /settings", s.requireLibrarian(s.settings))
-	mux.HandleFunc("POST /settings", s.requireLibrarian(s.saveSettings))
-
-	mux.HandleFunc("GET /members", s.requireLibrarian(s.members))
-	mux.HandleFunc("GET /members/new", s.requireLibrarian(s.newMemberPage))
-	mux.HandleFunc("POST /members", s.requireLibrarian(s.createMember))
-	mux.HandleFunc("GET /members/{id}", s.requireLibrarian(s.memberPage))
-	mux.HandleFunc("GET /members/{id}/edit", s.requireLibrarian(s.editMemberPage))
-	mux.HandleFunc("POST /members/{id}", s.requireLibrarian(s.updateMember))
-	mux.HandleFunc("POST /members/{id}/renew-card", s.requireLibrarian(s.renewCard))
-	mux.HandleFunc("POST /members/{id}/role", s.requireLibrarian(s.setRole))
-	mux.HandleFunc("POST /members/{id}/charges", s.requireLibrarian(s.addCharge))
-	mux.HandleFunc("POST /fines/{id}/resolve", s.requireLibrarian(s.resolveFine))
-
-	return s.recoverPanics(s.logRequests(securityHeaders(s.csrf(s.loadUser(mux)))))
-}
-
 // today is the current calendar day at the library.
 func (s *Server) today() domain.Date {
 	return domain.DateOf(s.now().In(s.loc))
