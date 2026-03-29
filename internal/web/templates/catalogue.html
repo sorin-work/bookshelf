@@ -4,11 +4,17 @@
   <h1>Catalogue</h1>
   {{if and .User .User.IsLibrarian}}<a class="button" href="/titles/new">Add a title</a>{{end}}
 </div>
-<form method="get" action="/catalogue" class="search" role="search">
+<form method="get" action="/catalogue" class="search" role="search"
+      hx-get="/catalogue" hx-target="#results" hx-push-url="true" hx-trigger="input changed delay:300ms from:#q, submit">
   <label for="q" class="visually-hidden">Search the catalogue</label>
-  <input id="q" name="q" type="search" value="{{$d.Query}}" placeholder="Title, author or ISBN">
+  <input id="q" name="q" type="search" value="{{$d.Query}}" placeholder="Title, author or ISBN" autocomplete="off">
   <button type="submit">Search</button>
 </form>
+<div id="results" aria-live="polite">{{template "results" .}}</div>
+{{end}}
+
+{{define "results"}}
+{{$d := .Data}}
 {{if $d.Titles}}
   <p class="muted">{{$d.Total}} {{if eq $d.Total 1}}title{{else}}titles{{end}}{{with $d.Query}} matching “{{.}}”{{end}}</p>
   <ul class="title-list">

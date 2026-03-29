@@ -122,3 +122,20 @@ func TestCopies(t *testing.T) {
 	wantBody(t, lib.get(loc), "1 of 2 on the shelf", "Lost")
 	wantBody(t, lib.get("/catalogue"), "1 available")
 }
+
+func TestCatalogueSearchAsYouType(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	lib.addTitle("title", "Matilda", "authors", "Roald Dahl")
+	lib.addTitle("title", "Dune", "authors", "Frank Herbert")
+
+	req, _ := http.NewRequest(http.MethodGet, env.srv.URL+"/catalogue?q=dahl", nil)
+	req.Header.Set("HX-Request", "true")
+	req.Header.Set("HX-Target", "results")
+	r := env.client().do(req)
+	wantStatus(t, r, http.StatusOK)
+	wantBody(t, r, "Matilda", "1 title matching")
+	if strings.Contains(r.body, "Dune") || strings.Contains(r.body, "<form") {
+		t.Errorf("unexpected fragment:\n%s", r.body)
+	}
+}

@@ -49,6 +49,11 @@ func (s *Server) catalogue(w http.ResponseWriter, r *http.Request) {
 	}
 	data.PrevURL = catalogueURL(q, pageNum-1)
 	data.NextURL = catalogueURL(q, pageNum+1)
+	if isHTMX(r) && r.Header.Get("HX-Target") == "results" {
+		// Search as you type: only the results are replaced.
+		s.execute(w, r, http.StatusOK, "catalogue.html", "results", page{Data: data})
+		return
+	}
 	s.render(w, r, http.StatusOK, "catalogue.html", page{Title: "Catalogue", Data: data})
 }
 
