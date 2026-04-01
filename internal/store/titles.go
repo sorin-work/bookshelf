@@ -214,9 +214,15 @@ type TitleSummary struct {
 }
 
 type TitleFilter struct {
-	Query  string
-	Limit  int
-	Offset int
+	Query string
+	// Subject and Author narrow the list to one subject or author by
+	// exact (case-insensitive) name.
+	Subject string
+	Author  string
+	// AvailableOnly keeps titles with a copy on the shelf.
+	AvailableOnly bool
+	Limit         int
+	Offset        int
 }
 
 // ListTitles returns titles matching the filter, sorted by title, and how
@@ -225,14 +231,31 @@ func (s *Store) ListTitles(ctx context.Context, f TitleFilter) ([]TitleSummary, 
 	if f.Limit <= 0 {
 		f.Limit = 25
 	}
-	where := ""
+	var conds []string
 	var args []any
 	if q := strings.TrimSpace(f.Query); q != "" {
 		like := likeContains(q)
-		where = `WHERE t.title LIKE ? ESCAPE '\' OR t.subtitle LIKE ? ESCAPE '\' OR t.isbn LIKE ? ESCAPE '\'
+		conds = append(conds, `(t.title LIKE ? ESCAPE '\' OR t.subtitle LIKE ? ESCAPE '\' OR t.isbn LIKE ? ESCAPE '\'
 			OR EXISTS (SELECT 1 FROM title_authors ta JOIN authors a ON a.id = ta.author_id
-			           WHERE ta.title_id = t.id AND a.name LIKE ? ESCAPE '\')`
+			           WHERE ta.title_id = t.id AND a.name LIKE ? ESCAPE '\'))`)
 		args = append(args, like, like, like, like)
+	}
+	if f.Subject != "" {
+		conds = append(conds, `EXISTS (SELECT 1 FROM title_subjects ts JOIN subjects s ON s.id = ts.subject_id
+			WHERE ts.title_id = t.id AND s.name = ?)`)
+		args = append(args, f.Subject)
+	}
+	if f.Author != "" {
+		conds = append(conds, `EXISTS (SELECT 1 FROM title_authors ta JOIN authors a ON a.id = ta.author_id
+			WHERE ta.title_id = t.id AND a.name = ?)`)
+		args = append(args, f.Author)
+	}
+	if f.AvailableOnly {
+		conds = append(conds, `EXISTS (SELECT 1 FROM copies c WHERE c.title_id = t.id AND c.status = 'available')`)
+	}
+	where := ""
+	if len(conds) > 0 {
+		where = "WHERE " + strings.Join(conds, " AND ")
 	}
 
 	var total int
@@ -264,4 +287,29 @@ func (s *Store) ListTitles(ctx context.Context, f TitleFilter) ([]TitleSummary, 
 		out = append(out, t)
 	}
 	return out, total, rows.Err()
+}
+
+type SubjectCount struct {
+	Name   string
+	Titles int
+}
+
+// Subjects lists every subject in use with how many titles have it.
+func (s *Store) Subjects(ctx context.Context) ([]SubjectCount, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT s.name, count(*) FROM subjects s
+		JOIN title_subjects ts ON ts.subject_id = s.id
+		GROUP BY s.id ORDER BY s.name COLLATE NOCASE`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []SubjectCount
+	for rows.Next() {
+		var sc SubjectCount
+		if err := rows.Scan(&sc.Name, &sc.Titles); err != nil {
+			return nil, err
+		}
+		out = append(out, sc)
+	}
+	return out, rows.Err()
 }

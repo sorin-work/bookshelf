@@ -160,3 +160,49 @@ func TestListTitlesCountsOnlyCirculatingCopies(t *testing.T) {
 		t.Errorf("copies %d, available %d; want 1 and 1", got[0].Copies, got[0].Available)
 	}
 }
+
+func TestListTitlesFilters(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	dune, _ := s.CreateTitle(ctx, TitleInput{Title: "Dune", Authors: []string{"Frank Herbert"}, Subjects: []string{"Science fiction"}}, now)
+	if _, err := s.CreateTitle(ctx, TitleInput{Title: "Dune Messiah", Authors: []string{"Frank Herbert"}, Subjects: []string{"Science fiction"}}, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CreateTitle(ctx, TitleInput{Title: "Matilda", Authors: []string{"Roald Dahl"}, Subjects: []string{"Children"}}, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CreateCopy(ctx, dune, CopyInput{Barcode: "D-1"}, now); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		f    TitleFilter
+		want int
+	}{
+		{"subject", TitleFilter{Subject: "science FICTION"}, 2},
+		{"author", TitleFilter{Author: "Roald Dahl"}, 1},
+		{"author and query", TitleFilter{Author: "Frank Herbert", Query: "messiah"}, 1},
+		{"available only", TitleFilter{AvailableOnly: true}, 1},
+		{"unknown subject", TitleFilter{Subject: "Cooking"}, 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, total, err := s.ListTitles(ctx, tt.f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if total != tt.want {
+				t.Errorf("total = %d, want %d", total, tt.want)
+			}
+		})
+	}
+
+	subjects, err := s.Subjects(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(subjects) != 2 || subjects[0].Name != "Children" || subjects[1].Titles != 2 {
+		t.Errorf("subjects %+v", subjects)
+	}
+}
