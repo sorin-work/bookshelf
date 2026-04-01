@@ -7,7 +7,7 @@
   <div>
     <h1>{{$t.Title}}</h1>
     {{with $t.Subtitle}}<p class="subtitle">{{.}}</p>{{end}}
-    {{if $t.Authors}}<p>by {{range $i, $a := $t.Authors}}{{if $i}}, {{end}}{{$a}}{{end}}</p>{{end}}
+    {{if $t.Authors}}<p>by {{range $i, $a := $t.Authors}}{{if $i}}, {{end}}<a href="/catalogue?author={{$a}}">{{$a}}</a>{{end}}</p>{{end}}
     <p class="availability">
       {{if .Data.Available}}<span class="badge ok">{{.Data.Available}} of {{len .Data.Copies}} on the shelf</span>
       {{else if .Data.Copies}}<span class="badge warn">All copies are out</span>
@@ -31,7 +31,7 @@
       {{with $t.ISBN}}<dt>ISBN</dt><dd>{{.}}</dd>{{end}}
       {{with $t.Publisher}}<dt>Publisher</dt><dd>{{.}}</dd>{{end}}
       {{with $t.Year}}<dt>Year</dt><dd>{{.}}</dd>{{end}}
-      {{if $t.Subjects}}<dt>Subjects</dt><dd>{{range $i, $s := $t.Subjects}}{{if $i}}, {{end}}{{$s}}{{end}}</dd>{{end}}
+      {{if $t.Subjects}}<dt>Subjects</dt><dd>{{range $i, $s := $t.Subjects}}{{if $i}}, {{end}}<a href="/catalogue?subject={{$s}}">{{$s}}</a>{{end}}</dd>{{end}}
     </dl>
     {{with $t.Description}}<p class="description">{{.}}</p>{{end}}
     {{if and $.User $.User.IsLibrarian}}<p><a class="button secondary" href="/titles/{{$t.ID}}/edit">Edit</a></p>{{end}}

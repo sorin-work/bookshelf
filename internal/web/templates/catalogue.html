@@ -4,19 +4,44 @@
   <h1>Catalogue</h1>
   {{if and .User .User.IsLibrarian}}<a class="button" href="/titles/new">Add a title</a>{{end}}
 </div>
-<form method="get" action="/catalogue" class="search" role="search"
-      hx-get="/catalogue" hx-target="#results" hx-push-url="true" hx-trigger="input changed delay:300ms from:#q, submit">
-  <label for="q" class="visually-hidden">Search the catalogue</label>
-  <input id="q" name="q" type="search" value="{{$d.Query}}" placeholder="Title, author or ISBN" autocomplete="off">
-  <button type="submit">Search</button>
-</form>
-<div id="results" aria-live="polite">{{template "results" .}}</div>
+<div class="catalogue">
+  <div>
+    <form method="get" action="/catalogue" class="search" role="search"
+          hx-get="/catalogue" hx-target="#results" hx-push-url="true"
+          hx-trigger="input changed delay:300ms from:#q, change from:#available, submit">
+      <label for="q" class="visually-hidden">Search the catalogue</label>
+      <input id="q" name="q" type="search" value="{{$d.Query.Q}}" placeholder="Title, author or ISBN" autocomplete="off">
+      {{with $d.Query.Subject}}<input type="hidden" name="subject" value="{{.}}">{{end}}
+      {{with $d.Query.Author}}<input type="hidden" name="author" value="{{.}}">{{end}}
+      <label class="check"><input id="available" type="checkbox" name="available" value="1"{{if $d.Query.Available}} checked{{end}}> On the shelf now</label>
+      <button type="submit">Search</button>
+    </form>
+    {{if or $d.Query.Subject $d.Query.Author}}
+    <p class="filters">
+      {{with $d.Query.Subject}}Subject: <strong>{{.}}</strong>{{end}}
+      {{with $d.Query.Author}}Author: <strong>{{.}}</strong>{{end}}
+      · <a href="/catalogue{{with $d.Query.Q}}?q={{.}}{{end}}">Show everything</a>
+    </p>
+    {{end}}
+    <div id="results" aria-live="polite">{{template "results" .}}</div>
+  </div>
+  {{if $d.Subjects}}
+  <aside class="subjects" aria-label="Subjects">
+    <h2>Subjects</h2>
+    <ul>
+      {{range $d.Subjects}}
+      <li><a href="/catalogue?subject={{.Name}}"{{if eq .Name $d.Query.Subject}} aria-current="true"{{end}}>{{.Name}}</a> <span class="muted">{{.Titles}}</span></li>
+      {{end}}
+    </ul>
+  </aside>
+  {{end}}
+</div>
 {{end}}
 
 {{define "results"}}
 {{$d := .Data}}
 {{if $d.Titles}}
-  <p class="muted">{{$d.Total}} {{if eq $d.Total 1}}title{{else}}titles{{end}}{{with $d.Query}} matching “{{.}}”{{end}}</p>
+  <p class="muted">{{$d.Total}} {{if eq $d.Total 1}}title{{else}}titles{{end}}{{with $d.Query.Q}} matching “{{.}}”{{end}}</p>
   <ul class="title-list">
     {{range $d.Titles}}
     <li>
@@ -34,8 +59,8 @@
     {{if $d.HasPrev}}<a href="{{$d.PrevURL}}">← Previous</a>{{end}}
     {{if $d.HasNext}}<a href="{{$d.NextURL}}">Next →</a>{{end}}
   </nav>
-{{else if $d.Query}}
-  <p class="empty">Nothing matches “{{$d.Query}}”. Try part of the title or the author's surname.</p>
+{{else if $d.Query.Filtered}}
+  <p class="empty">Nothing matches{{with $d.Query.Q}} “{{.}}”{{end}}. Try part of the title or the author's surname.</p>
 {{else}}
   <p class="empty">The catalogue is empty.{{if and .User .User.IsLibrarian}} <a href="/titles/new">Add the first title.</a>{{end}}</p>
 {{end}}

@@ -47,7 +47,8 @@ func TestAddAndEditTitle(t *testing.T) {
 		"authors", "Ursula K. Le Guin", "subjects", "Science fiction, Classics", "year", "1969")
 	r := lib.get(loc)
 	wantStatus(t, r, http.StatusOK)
-	wantBody(t, r, "The Left Hand of Darkness", "9780441478125", "Ursula K. Le Guin", "Classics, Science fiction")
+	wantBody(t, r, "The Left Hand of Darkness", "9780441478125", "Ursula K. Le Guin",
+		`<a href="/catalogue?subject=Classics">Classics</a>, <a href="/catalogue?subject=Science%20fiction">Science fiction</a>`)
 
 	r = lib.post(loc, titleValues("title", "The Left Hand of Darkness", "isbn", "9780441478125",
 		"subtitle", "50th anniversary edition", "authors", "Ursula K. Le Guin"))
@@ -138,4 +139,22 @@ func TestCatalogueSearchAsYouType(t *testing.T) {
 	if strings.Contains(r.body, "Dune") || strings.Contains(r.body, "<form") {
 		t.Errorf("unexpected fragment:\n%s", r.body)
 	}
+}
+
+func TestBrowseBySubjectAndAuthor(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	lib.addTitle("title", "Matilda", "authors", "Roald Dahl", "subjects", "Children")
+	lib.addTitle("title", "The BFG", "authors", "Roald Dahl", "subjects", "Children, Giants")
+	lib.addTitle("title", "Dune", "authors", "Frank Herbert", "subjects", "Science fiction")
+
+	r := env.client().get("/catalogue?subject=Giants")
+	wantBody(t, r, "The BFG", "Subject: <strong>Giants</strong>", "1 title")
+	if strings.Contains(r.body, "Matilda") {
+		t.Error("subject filter let Matilda through")
+	}
+	r = env.client().get("/catalogue?author=Roald+Dahl")
+	wantBody(t, r, "Matilda", "The BFG", "2 titles")
+	// The subject list shows counts.
+	wantBody(t, env.client().get("/catalogue"), `Children</a> <span class="muted">2</span>`)
 }

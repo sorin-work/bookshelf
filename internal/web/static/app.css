@@ -235,3 +235,11 @@ ol.popular, ul.activity { padding-left: 1.25rem; }
 ul.activity { list-style: none; padding: 0; }
 ul.activity li { padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
 .notice { color: var(--ok); font-weight: 600; margin-right: 0.75rem; }
+
+.catalogue { display: grid; grid-template-columns: 1fr 14rem; gap: 2rem; }
+.subjects ul { list-style: none; padding: 0; margin: 0; }
+.subjects li { padding: 0.2rem 0; }
+.subjects a[aria-current] { font-weight: 700; }
+.search .check { display: flex; align-items: center; gap: 0.35rem; font-weight: normal; white-space: nowrap; margin: 0; }
+.search .check input { width: auto; }
+.filters { margin: -0.25rem 0 1rem; }
