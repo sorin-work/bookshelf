@@ -25,6 +25,15 @@
       <dt>Online access</dt><dd>{{if $m.CanLogIn}}Yes{{else}}No password set{{end}}</dd>
       <dt>Joined</dt><dd>{{date $m.CreatedAt}}</dd>
     </dl>
+    <details class="set-password">
+      <summary>{{if $m.CanLogIn}}Reset their password{{else}}Set a password for online access{{end}}</summary>
+      <form method="post" action="/members/{{$m.ID}}/password" class="inline-form">
+        {{template "csrf" $}}
+        <label for="member-password" class="visually-hidden">New password</label>
+        <input id="member-password" name="password" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters">
+        <button type="submit" class="secondary">Set password</button>
+      </form>
+    </details>
     <form method="post" action="/members/{{$m.ID}}/role" class="inline">
       {{template "csrf" $}}
       {{if $m.IsLibrarian}}

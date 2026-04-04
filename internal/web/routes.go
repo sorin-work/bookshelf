@@ -26,6 +26,8 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /logout", s.logout)
 
 	mux.HandleFunc("GET /account", s.requireUser(s.account))
+	mux.HandleFunc("GET /account/password", s.requireUser(s.passwordPage))
+	mux.HandleFunc("POST /account/password", s.requireUser(s.changePassword))
 	mux.HandleFunc("GET /catalogue", s.catalogue)
 	mux.HandleFunc("GET /titles/new", s.requireLibrarian(s.newTitlePage))
 	mux.HandleFunc("POST /titles", s.requireLibrarian(s.createTitle))
@@ -56,6 +58,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /members/{id}", s.requireLibrarian(s.updateMember))
 	mux.HandleFunc("POST /members/{id}/renew-card", s.requireLibrarian(s.renewCard))
 	mux.HandleFunc("POST /members/{id}/role", s.requireLibrarian(s.setRole))
+	mux.HandleFunc("POST /members/{id}/password", s.requireLibrarian(s.setMemberPassword))
 	mux.HandleFunc("POST /members/{id}/charges", s.requireLibrarian(s.addCharge))
 	mux.HandleFunc("POST /fines/{id}/resolve", s.requireLibrarian(s.resolveFine))
 }

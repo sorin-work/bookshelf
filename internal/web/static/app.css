@@ -243,3 +243,7 @@ ul.activity li { padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
 .search .check { display: flex; align-items: center; gap: 0.35rem; font-weight: normal; white-space: nowrap; margin: 0; }
 .search .check input { width: auto; }
 .filters { margin: -0.25rem 0 1rem; }
+
+details.set-password { margin: 0.75rem 0; }
+details.set-password summary { cursor: pointer; color: var(--accent); }
+.inline-form { display: flex; gap: 0.5rem; margin-top: 0.5rem; }

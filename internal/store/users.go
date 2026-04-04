@@ -134,3 +134,20 @@ func (s *Store) UserByCard(ctx context.Context, card string) (User, error) {
 func isUniqueViolation(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "UNIQUE constraint failed")
 }
+
+// SetPassword replaces a user's password hash and signs them out
+// everywhere else by deleting their other sessions. keepSession is the
+// hash of the session to keep, or "" to delete them all.
+func (s *Store) SetPassword(ctx context.Context, userID int64, hash, keepSession string) error {
+	return s.inTx(ctx, func(tx *sql.Tx) error {
+		res, err := tx.ExecContext(ctx, `UPDATE users SET password_hash = ? WHERE id = ?`, hash, userID)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return ErrNotFound
+		}
+		_, err = tx.ExecContext(ctx, `DELETE FROM sessions WHERE user_id = ? AND token_hash != ?`, userID, keepSession)
+		return err
+	})
+}
