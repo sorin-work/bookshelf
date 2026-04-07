@@ -8,8 +8,10 @@
     <h2>Check out</h2>
     <div class="field">
       <label for="card">Library card</label>
-      <input id="card" name="card" value="{{.Data.Card}}" inputmode="numeric" autocomplete="off" required>
+      <input id="card" name="card" value="{{.Data.Card}}" inputmode="numeric" autocomplete="off" required
+             hx-get="/desk/member" hx-trigger="input changed delay:400ms" hx-target="#desk-member" hx-include="this">
     </div>
+    <div id="desk-member">{{template "desk_member" .}}</div>
     <div class="field">
       <label for="checkout-barcode">Copy barcode</label>
       <input id="checkout-barcode" name="barcode" autocomplete="off" required>
@@ -40,6 +42,23 @@
     <p><strong>Put this copy on the hold shelf</strong> for {{.MemberName}} (card {{.CardNumber}}).</p>
     <p>It waits for them until {{.ExpiresOn.Format "Mon 2 Jan"}}.</p>
   </div>
+  {{end}}
+{{end}}
+{{end}}
+
+{{define "desk_member"}}
+{{with .Data.Member}}
+  {{if .NotFound}}
+    <p class="member-summary muted">No member has this card.</p>
+  {{else}}
+    <div class="member-summary">
+      <p><a href="/members/{{.Member.ID}}"><strong>{{.Member.Name}}</strong></a>
+         · {{.Loans}} on loan{{if .Overdue}}, <span class="status-lost">{{.Overdue}} overdue</span>{{end}}</p>
+      {{if not .Member.Active}}<p class="badge warn">Account closed</p>{{end}}
+      {{if .CardExpired}}<p class="badge warn">Card expired {{.Member.CardExpires.Format "2 Jan 2006"}}</p>{{end}}
+      {{if .Owed}}<p>Owes {{money .Owed .Currency}}{{if .Blocked}}: <strong>can't borrow until they pay</strong>{{end}}</p>{{end}}
+      {{range .Ready}}<p class="badge ok">Hold ready: {{.Title}} (copy {{.Barcode}})</p>{{end}}
+    </div>
   {{end}}
 {{end}}
 {{end}}

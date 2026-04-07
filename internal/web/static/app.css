@@ -250,3 +250,6 @@ details.set-password summary { cursor: pointer; color: var(--accent); }
 
 .danger-zone { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 .danger-zone button.link { color: var(--danger); margin-right: 0.5rem; }
+
+.member-summary { margin: -0.5rem 0 1rem; padding: 0.6rem 0.75rem; background: var(--bg); border-radius: var(--radius); }
+.member-summary p { margin: 0.2rem 0; }

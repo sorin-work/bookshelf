@@ -158,3 +158,19 @@ func TestRenewWithHTMXSwapsTheRow(t *testing.T) {
 		t.Error("got a whole page")
 	}
 }
+
+func TestDeskMemberSummary(t *testing.T) {
+	c := newCirc(t)
+	c.checkout("C01")
+	c.env.now = c.env.now.AddDate(0, 0, 30)
+
+	r := c.lib.get("/desk/member?card=" + c.mo.CardNumber)
+	wantStatus(t, r, http.StatusOK)
+	wantBody(t, r, "Mo Member", "1 on loan", "1 overdue")
+	wantBody(t, c.lib.get("/desk/member?card="+domain.CardNumber(999)), "No member has this card.")
+	r = c.lib.get("/desk/member?card=12")
+	if strings.TrimSpace(r.body) != "" {
+		t.Errorf("half-typed card gave %q", r.body)
+	}
+	wantBody(t, c.lib.get("/desk?card="+c.mo.CardNumber), "Mo Member", "1 overdue")
+}

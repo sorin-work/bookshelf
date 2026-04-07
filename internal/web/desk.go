@@ -22,12 +22,89 @@ type deskResult struct {
 type deskPage struct {
 	Card   string
 	Result *deskResult
+	Member *memberSummary
+}
+
+// memberSummary is shown at the desk once a card has been scanned, so the
+// librarian knows about expired cards, fines and waiting holds before
+// scanning books.
+type memberSummary struct {
+	Member      store.User
+	CardExpired bool
+	Loans       int
+	Overdue     int
+	Owed        int
+	Blocked     bool
+	Currency    string
+	Ready       []store.HoldRow
+	NotFound    bool
+}
+
+// memberSummary returns nil until card is a complete, valid number.
+func (s *Server) memberSummary(r *http.Request, card string) (*memberSummary, error) {
+	card, cardErr := domain.NormalizeCardNumber(card)
+	if cardErr != nil {
+		return nil, nil //nolint:nilerr // a half typed number is not an error
+	}
+	m, err := s.store.UserByCard(r.Context(), card)
+	if errors.Is(err, store.ErrNotFound) {
+		return &memberSummary{NotFound: true}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	sum := &memberSummary{Member: m, CardExpired: m.CardExpired(s.today())}
+	loans, err := s.store.ActiveLoans(r.Context(), m.ID)
+	if err != nil {
+		return nil, err
+	}
+	sum.Loans = len(loans)
+	for _, l := range loans {
+		if l.Rules().Overdue(s.today()) {
+			sum.Overdue++
+		}
+	}
+	if sum.Owed, err = s.store.FinesOwed(r.Context(), m.ID); err != nil {
+		return nil, err
+	}
+	policy, err := s.store.Policy(r.Context())
+	if err != nil {
+		return nil, err
+	}
+	sum.Currency = policy.Currency
+	sum.Blocked = policy.BlockAt > 0 && sum.Owed >= policy.BlockAt
+	holds, err := s.store.OpenHolds(r.Context(), m.ID)
+	if err != nil {
+		return nil, err
+	}
+	for _, h := range holds {
+		if h.Status == domain.HoldReady {
+			sum.Ready = append(sum.Ready, h)
+		}
+	}
+	return sum, nil
+}
+
+// deskMember answers the htmx lookup made when a card is scanned.
+func (s *Server) deskMember(w http.ResponseWriter, r *http.Request) {
+	sum, err := s.memberSummary(r, r.URL.Query().Get("card"))
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	s.execute(w, r, http.StatusOK, "desk.html", "desk_member", page{Data: deskPage{Member: sum}})
 }
 
 func isHTMX(r *http.Request) bool { return r.Header.Get("HX-Request") == "true" }
 
 func (s *Server) desk(w http.ResponseWriter, r *http.Request) {
-	s.render(w, r, http.StatusOK, "desk.html", page{Title: "Circulation desk", Data: deskPage{Card: r.URL.Query().Get("card")}})
+	d := deskPage{Card: r.URL.Query().Get("card")}
+	var err error
+	if d.Member, err = s.memberSummary(r, d.Card); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	s.render(w, r, http.StatusOK, "desk.html", page{Title: "Circulation desk", Data: d})
 }
 
 func (s *Server) deskRespond(w http.ResponseWriter, r *http.Request, d deskPage) {

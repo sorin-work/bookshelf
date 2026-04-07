@@ -43,6 +43,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /dashboard", s.requireLibrarian(s.dashboard))
 
 	mux.HandleFunc("GET /desk", s.requireLibrarian(s.desk))
+	mux.HandleFunc("GET /desk/member", s.requireLibrarian(s.deskMember))
 	mux.HandleFunc("POST /desk/checkout", s.requireLibrarian(s.deskCheckout))
 	mux.HandleFunc("POST /desk/return", s.requireLibrarian(s.deskReturn))
 	mux.HandleFunc("POST /loans/{id}/renew", s.requireUser(s.renewLoan))
