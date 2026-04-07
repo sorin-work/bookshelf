@@ -2,7 +2,10 @@ package store
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"strings"
+	"time"
 
 	"github.com/sorin-work/bookshelf/internal/domain"
 )
@@ -96,4 +99,50 @@ func (s *Store) CountLibrarians(ctx context.Context) (int, error) {
 	var n int
 	err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM users WHERE role = 'librarian'`).Scan(&n)
 	return n, err
+}
+
+var ErrHasLoans = errors.New("the member still has items on loan")
+
+// SetActive deactivates or reactivates a member. Deactivating cancels
+// their holds and signs them out; it is refused while they have items
+// out.
+func (s *Store) SetActive(ctx context.Context, id int64, active bool, today domain.Date, now time.Time) error {
+	if active {
+		res, err := s.db.ExecContext(ctx, `UPDATE users SET active = 1 WHERE id = ?`, id)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return ErrNotFound
+		}
+		return nil
+	}
+
+	var loans int
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM loans WHERE user_id = ? AND returned_at IS NULL`, id).Scan(&loans); err != nil {
+		return err
+	}
+	if loans > 0 {
+		return ErrHasLoans
+	}
+	holds, err := s.ids(ctx, `SELECT id FROM holds WHERE user_id = ? AND status IN ('waiting', 'ready')`, id)
+	if err != nil {
+		return err
+	}
+	for _, h := range holds {
+		if err := s.CancelHold(ctx, h, today, now); err != nil {
+			return err
+		}
+	}
+	return s.inTx(ctx, func(tx *sql.Tx) error {
+		res, err := tx.ExecContext(ctx, `UPDATE users SET active = 0 WHERE id = ?`, id)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return ErrNotFound
+		}
+		_, err = tx.ExecContext(ctx, `DELETE FROM sessions WHERE user_id = ?`, id)
+		return err
+	})
 }

@@ -100,3 +100,27 @@ func TestEditMember(t *testing.T) {
 
 	wantStatus(t, lib.get("/members/9999"), http.StatusNotFound)
 }
+
+func TestCloseAccount(t *testing.T) {
+	c := newCirc(t)
+	member := "/members/" + itoa(c.mo.ID)
+	c.checkout("C01")
+
+	r := c.lib.post(member+"/active", titleValues("active", "0"))
+	wantStatus(t, r, http.StatusConflict)
+	wantBody(t, r, "still has items on loan")
+
+	c.lib.post("/desk/return", titleValues("barcode", "C01"))
+	wantRedirect(t, c.lib.post(member+"/active", titleValues("active", "0")), member)
+	wantBody(t, c.lib.get(member), "Account closed")
+
+	// Signed out, can't log back in, can't borrow.
+	wantRedirect(t, c.member.get("/account"), "/login?next=%2Faccount")
+	wantStatus(t, c.env.client().login("mo@example.com", "long enough"), http.StatusUnauthorized)
+	r = c.checkout("C01")
+	wantStatus(t, r, http.StatusUnprocessableEntity)
+	wantBody(t, r, "account is closed")
+
+	wantRedirect(t, c.lib.post(member+"/active", titleValues("active", "1")), member)
+	wantRedirect(t, c.env.client().login("mo@example.com", "long enough"), "/")
+}

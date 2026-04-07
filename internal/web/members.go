@@ -279,3 +279,31 @@ func (s *Server) setRole(w http.ResponseWriter, r *http.Request) {
 	s.log.Info("role changed", "member_id", m.ID, "role", role, "by", currentUser(r).ID)
 	http.Redirect(w, r, fmt.Sprintf("/members/%d", m.ID), http.StatusSeeOther)
 }
+
+func (s *Server) setActive(w http.ResponseWriter, r *http.Request) {
+	m, ok := s.memberFromPath(w, r)
+	if !ok {
+		return
+	}
+	active := r.PostFormValue("active") == "1"
+	if !active && m.ID == currentUser(r).ID {
+		http.Error(w, "You can't close your own account.", http.StatusConflict)
+		return
+	}
+	err := s.store.SetActive(r.Context(), m.ID, active, s.today(), s.now())
+	if errors.Is(err, store.ErrHasLoans) {
+		http.Error(w, m.Name+" still has items on loan. Check them in first.", http.StatusConflict)
+		return
+	}
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	s.log.Info("member active changed", "member_id", m.ID, "active", active, "by", currentUser(r).ID)
+	if active {
+		s.setFlash(w, m.Name+"'s account is open again.")
+	} else {
+		s.setFlash(w, m.Name+"'s account is closed. Their history is kept.")
+	}
+	http.Redirect(w, r, fmt.Sprintf("/members/%d", m.ID), http.StatusSeeOther)
+}

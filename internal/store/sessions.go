@@ -16,7 +16,7 @@ func (s *Store) CreateSession(ctx context.Context, tokenHash string, userID int6
 // the session hasn't expired.
 func (s *Store) SessionUser(ctx context.Context, tokenHash string, now time.Time) (User, error) {
 	return scanUser(s.db.QueryRowContext(ctx, `SELECT `+userColumns+` FROM users
-		WHERE id = (SELECT user_id FROM sessions WHERE token_hash = ? AND expires_at > ?)`,
+		WHERE active AND id = (SELECT user_id FROM sessions WHERE token_hash = ? AND expires_at > ?)`,
 		tokenHash, fmtTime(now)))
 }
 

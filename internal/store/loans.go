@@ -14,6 +14,7 @@ var (
 	ErrCopyOnLoan      = errors.New("this copy is already checked out")
 	ErrCopyUnavailable = errors.New("this copy is marked lost or withdrawn")
 	ErrNotOnLoan       = errors.New("this copy is not checked out")
+	ErrMemberInactive  = errors.New("this member's account has been closed")
 	// ErrCopyHeldForOther means the copy is on the hold shelf for someone
 	// else.
 	ErrCopyHeldForOther = errors.New("this copy is set aside for another member")
@@ -130,6 +131,9 @@ func (s *Store) Checkout(ctx context.Context, req CheckoutRequest) (LoanRow, err
 		member, err := scanUser(tx.QueryRowContext(ctx, `SELECT `+userColumns+` FROM users WHERE id = ?`, req.UserID))
 		if err != nil {
 			return err
+		}
+		if !member.Active {
+			return ErrMemberInactive
 		}
 		c, err := scanCopy(tx.QueryRowContext(ctx, `SELECT `+copyColumns+` FROM copies WHERE barcode = ?`, req.Barcode))
 		if err != nil {

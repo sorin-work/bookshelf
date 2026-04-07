@@ -91,6 +91,9 @@ func (s *Server) deskCheckout(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, store.ErrCopyUnavailable):
 		fail("Copy " + barcode + " is marked lost or withdrawn. Put it back on the shelf from the title page first.")
 		return
+	case errors.Is(err, store.ErrMemberInactive):
+		fail(member.Name + "'s account is closed. Reopen it on their member page to lend to them again.")
+		return
 	case errors.Is(err, domain.ErrCardExpired):
 		fail(member.Name + "'s card expired on " + member.CardExpires.Format("2 Jan 2006") + ". Renew it on their member page.")
 		return

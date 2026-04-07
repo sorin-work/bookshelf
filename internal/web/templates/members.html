@@ -15,7 +15,7 @@
   <tbody>
   {{range $d.Members}}
     <tr>
-      <td><a href="/members/{{.ID}}">{{.Name}}</a></td>
+      <td><a href="/members/{{.ID}}">{{.Name}}</a>{{if not .Active}} <span class="badge">closed</span>{{end}}</td>
       <td><code>{{.FormattedCard}}</code></td>
       <td>{{.Email}}</td>
       <td>{{.CardExpires.Format "2 Jan 2006"}}</td>

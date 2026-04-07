@@ -28,13 +28,15 @@ type User struct {
 	CardNumber   string
 	CardExpires  domain.Date
 	Notes        string
+	Active       bool
 	CreatedAt    time.Time
 }
 
 func (u User) IsLibrarian() bool { return u.Role == RoleLibrarian }
 
-// CanLogIn is false for members registered at the desk without a password.
-func (u User) CanLogIn() bool { return u.PasswordHash != "" }
+// CanLogIn is false for members registered at the desk without a password
+// and for deactivated accounts.
+func (u User) CanLogIn() bool { return u.PasswordHash != "" && u.Active }
 
 func (u User) CardExpired(today domain.Date) bool {
 	return !u.CardExpires.IsZero() && u.CardExpires.Before(today)
@@ -103,12 +105,12 @@ func (s *Store) EnsureCards(ctx context.Context, expires domain.Date) (int, erro
 	return len(ids), nil
 }
 
-const userColumns = `id, email, name, phone, password_hash, role, coalesce(card_number, ''), coalesce(card_expires, ''), notes, created_at`
+const userColumns = `id, email, name, phone, password_hash, role, coalesce(card_number, ''), coalesce(card_expires, ''), notes, active, created_at`
 
 func scanUser(row interface{ Scan(...any) error }) (User, error) {
 	var u User
 	var expires, created string
-	if err := row.Scan(&u.ID, &u.Email, &u.Name, &u.Phone, &u.PasswordHash, &u.Role, &u.CardNumber, &expires, &u.Notes, &created); err != nil {
+	if err := row.Scan(&u.ID, &u.Email, &u.Name, &u.Phone, &u.PasswordHash, &u.Role, &u.CardNumber, &expires, &u.Notes, &u.Active, &created); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return User{}, ErrNotFound
 		}

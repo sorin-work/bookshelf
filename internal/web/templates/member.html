@@ -1,7 +1,7 @@
 {{define "content"}}
 {{$m := .Data.Member}}
 <div class="page-head">
-  <h1>{{$m.Name}}</h1>
+  <h1>{{$m.Name}}{{if not $m.Active}} <span class="badge warn">Account closed</span>{{end}}</h1>
   <a class="button secondary" href="/members/{{$m.ID}}/edit">Edit</a>
 </div>
 <div class="grid-2">
@@ -113,4 +113,17 @@
   </table>
 </section>
 {{end}}
+<section class="danger-zone">
+  <form method="post" action="/members/{{$m.ID}}/active" class="inline">
+    {{template "csrf" $}}
+    {{if $m.Active}}
+      <input type="hidden" name="active" value="0">
+      <button type="submit" class="link">Close this account</button>
+      <span class="muted">They can't log in or borrow, and their holds are cancelled. Loans and fines are kept.</span>
+    {{else}}
+      <input type="hidden" name="active" value="1">
+      <button type="submit" class="secondary">Reopen account</button>
+    {{end}}
+  </form>
+</section>
 {{end}}

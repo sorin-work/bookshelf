@@ -247,3 +247,6 @@ ul.activity li { padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
 details.set-password { margin: 0.75rem 0; }
 details.set-password summary { cursor: pointer; color: var(--accent); }
 .inline-form { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+
+.danger-zone { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.danger-zone button.link { color: var(--danger); margin-right: 0.5rem; }

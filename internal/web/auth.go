@@ -107,7 +107,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
-	if err != nil || !auth.CheckPassword(u.PasswordHash, password) {
+	if err != nil || !u.Active || !auth.CheckPassword(u.PasswordHash, password) {
 		s.logins.Fail(f.Email, s.now())
 		f.Errors["form"] = "That email and password don't match an account."
 		s.render(w, r, http.StatusUnauthorized, "login.html", page{Title: "Log in", Data: f})
