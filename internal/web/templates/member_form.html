@@ -19,7 +19,14 @@
       <input id="phone" name="phone" type="tel" value="{{$f.Phone}}">
       {{template "field_error" index $f.Errors "phone"}}
     </div>
-    {{if not $f.ID}}
+    {{if $f.ID}}
+    <div class="field">
+      <label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="3">{{$f.Notes}}</textarea>
+      <p class="hint">Only librarians see these.</p>
+      {{template "field_error" index $f.Errors "notes"}}
+    </div>
+    {{else}}
     <div class="field">
       <label for="password">Password <span class="muted">(optional)</span></label>
       <input id="password" name="password" type="password" autocomplete="new-password">

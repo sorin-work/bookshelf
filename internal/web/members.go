@@ -63,6 +63,7 @@ type memberForm struct {
 	Name   string
 	Email  string
 	Phone  string
+	Notes  string
 	Errors formErrors
 }
 
@@ -71,6 +72,7 @@ func parseMemberForm(r *http.Request) memberForm {
 		Name:   strings.TrimSpace(r.PostFormValue("name")),
 		Email:  strings.TrimSpace(r.PostFormValue("email")),
 		Phone:  strings.TrimSpace(r.PostFormValue("phone")),
+		Notes:  strings.TrimSpace(r.PostFormValue("notes")),
 		Errors: formErrors{},
 	}
 	if f.Name == "" {
@@ -83,6 +85,9 @@ func parseMemberForm(r *http.Request) memberForm {
 	}
 	if utf8.RuneCountInString(f.Phone) > 30 {
 		f.Errors["phone"] = "That phone number is too long."
+	}
+	if utf8.RuneCountInString(f.Notes) > 2000 {
+		f.Errors["notes"] = "Keep notes under 2000 characters."
 	}
 	return f
 }
@@ -201,7 +206,7 @@ func (s *Server) editMemberPage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	f := memberForm{ID: m.ID, Name: m.Name, Email: m.Email, Phone: m.Phone}
+	f := memberForm{ID: m.ID, Name: m.Name, Email: m.Email, Phone: m.Phone, Notes: m.Notes}
 	s.render(w, r, http.StatusOK, "member_form.html", page{Title: "Edit " + m.Name, Data: f})
 }
 
@@ -213,7 +218,7 @@ func (s *Server) updateMember(w http.ResponseWriter, r *http.Request) {
 	f := parseMemberForm(r)
 	f.ID = m.ID
 	if !f.Errors.any() {
-		err := s.store.UpdateMember(r.Context(), m.ID, store.MemberInput{Name: f.Name, Email: f.Email, Phone: f.Phone})
+		err := s.store.UpdateMember(r.Context(), m.ID, store.MemberInput{Name: f.Name, Email: f.Email, Phone: f.Phone, Notes: f.Notes})
 		switch {
 		case errors.Is(err, store.ErrConflict):
 			f.Errors["email"] = "Someone else is registered with this email."

@@ -24,6 +24,7 @@
       <dt>Role</dt><dd>{{if $m.IsLibrarian}}Librarian{{else}}Member{{end}}</dd>
       <dt>Online access</dt><dd>{{if $m.CanLogIn}}Yes{{else}}No password set{{end}}</dd>
       <dt>Joined</dt><dd>{{date $m.CreatedAt}}</dd>
+      {{with $m.Notes}}<dt>Notes</dt><dd class="description">{{.}}</dd>{{end}}
     </dl>
     <details class="set-password">
       <summary>{{if $m.CanLogIn}}Reset their password{{else}}Set a password for online access{{end}}</summary>

@@ -52,11 +52,12 @@ type MemberInput struct {
 	Name  string
 	Email string
 	Phone string
+	Notes string
 }
 
 func (s *Store) UpdateMember(ctx context.Context, id int64, in MemberInput) error {
-	res, err := s.db.ExecContext(ctx, `UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?`,
-		strings.TrimSpace(in.Name), strings.TrimSpace(in.Email), strings.TrimSpace(in.Phone), id)
+	res, err := s.db.ExecContext(ctx, `UPDATE users SET name = ?, email = ?, phone = ?, notes = ? WHERE id = ?`,
+		strings.TrimSpace(in.Name), strings.TrimSpace(in.Email), strings.TrimSpace(in.Phone), strings.TrimSpace(in.Notes), id)
 	if err != nil {
 		if isUniqueViolation(err) {
 			return ErrConflict

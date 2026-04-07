@@ -91,8 +91,8 @@ func TestEditMember(t *testing.T) {
 	mo, _ := env.store.UserByEmail(t.Context(), "mo@example.com")
 	path := "/members/" + itoa(mo.ID)
 
-	wantRedirect(t, lib.post(path, titleValues("name", "Mo Salah", "email", "mo.s@example.com")), path)
-	wantBody(t, lib.get(path), "Mo Salah", "mo.s@example.com")
+	wantRedirect(t, lib.post(path, titleValues("name", "Mo Salah", "email", "mo.s@example.com", "notes", "Year 5, Mrs Pop's class")), path)
+	wantBody(t, lib.get(path), "Mo Salah", "mo.s@example.com", "Year 5, Mrs Pop&#39;s class")
 
 	r := lib.post(path, titleValues("name", "Mo", "email", "ana@example.com"))
 	wantStatus(t, r, http.StatusUnprocessableEntity)
