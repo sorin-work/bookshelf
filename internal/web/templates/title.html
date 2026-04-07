@@ -67,7 +67,11 @@
     {{range .Data.Copies}}
       <tr>
         <td><code>{{.Barcode}}</code></td>
-        <td><span class="status status-{{.Status}}">{{.Status.Label}}</span></td>
+        <td>
+          <span class="status status-{{.Status}}">{{.Status.Label}}</span>
+          {{if .BorrowerID}}<div class="muted"><a href="/members/{{.BorrowerID}}">{{.BorrowerName}}</a>, due {{.Due.Format "2 Jan"}}</div>{{end}}
+          {{if .HeldForID}}<div class="muted">for <a href="/members/{{.HeldForID}}">{{.HeldForName}}</a></div>{{end}}
+        </td>
         <td>{{.Shelf}}</td>
         <td>{{.Note}}</td>
         <td class="row-actions">

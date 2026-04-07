@@ -13,7 +13,7 @@ import (
 
 type titleView struct {
 	Title     store.Title
-	Copies    []store.Copy
+	Copies    []store.CopyWhereabouts
 	Available int
 	// Circulating counts copies that are not lost or withdrawn.
 	Circulating int
@@ -39,7 +39,7 @@ func (s *Server) loadTitleView(r *http.Request, id int64) (titleView, error) {
 	if err != nil {
 		return titleView{}, err
 	}
-	copies, err := s.store.CopiesForTitle(r.Context(), id)
+	copies, err := s.store.CopiesWithWhereabouts(r.Context(), id)
 	if err != nil {
 		return titleView{}, err
 	}

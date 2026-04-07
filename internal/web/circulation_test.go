@@ -55,7 +55,7 @@ func TestDeskCheckoutAndReturn(t *testing.T) {
 	wantBody(t, r, "already checked out")
 
 	wantBody(t, c.member.get("/account"), "Dune", "C01", "Tue 31 Mar")
-	wantBody(t, c.lib.get(c.title), "1 of 2 on the shelf")
+	wantBody(t, c.lib.get(c.title), "1 of 2 on the shelf", "Mo Member</a>, due 31 Mar")
 
 	r = c.lib.post("/desk/return", titleValues("barcode", "C01"))
 	wantStatus(t, r, http.StatusOK)
