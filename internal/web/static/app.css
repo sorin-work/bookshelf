@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light dark;
   --bg: #faf8f5;
   --surface: #ffffff;
   --text: #22201c;
@@ -15,6 +16,28 @@
   line-height: 1.5;
   color: var(--text);
   background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171614;
+    --surface: #211f1c;
+    --text: #ece8e1;
+    --muted: #a39d93;
+    --border: #36322d;
+    --accent: #7fb8a4;
+    --accent-text: #10201b;
+    --danger: #e5826f;
+    --warning: #d9b25f;
+    --ok: #86c792;
+  }
+  .alert.error { background: #3a201b; }
+  .alert.ok, .badge.ok { background: #1d3122; }
+  .badge.warn { background: #3a3020; }
+  .alert.hold { background: #1c2838; color: #a9c4e6; border-left-color: #a9c4e6; }
+  tr.overdue td { background: #2c2519; }
+  .cover-placeholder { background: linear-gradient(160deg, #2b2823, #35302a); }
+  .library-card { background: linear-gradient(135deg, #24473d, #2f5d50); }
 }
 
 * { box-sizing: border-box; }
