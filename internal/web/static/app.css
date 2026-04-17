@@ -267,3 +267,21 @@ details.set-password summary { cursor: pointer; color: var(--accent); }
 }
 .skip-link:focus { top: 0.5rem; }
 a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Small screens: the navigation wraps under the brand and tables scroll
+   sideways instead of squashing their columns. */
+@media (max-width: 760px) {
+  .topbar { flex-wrap: wrap; gap: 0.5rem 1rem; padding: 0.75rem 1rem; }
+  .nav { order: 3; flex-basis: 100%; overflow-x: auto; gap: 0.9rem; padding-bottom: 0.25rem; }
+  .nav a { white-space: nowrap; }
+  .account { margin-left: auto; }
+  .container { padding: 1rem; }
+  .row, .row.three, .grid-2, .catalogue { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .title-detail { grid-template-columns: 1fr; }
+  .cover img, .cover-placeholder { width: 140px; }
+  .table { display: block; overflow-x: auto; white-space: nowrap; }
+  .page-head { flex-wrap: wrap; }
+  .search { flex-wrap: wrap; }
+  .hero h1 { font-size: 1.7rem; }
+}
