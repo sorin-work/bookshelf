@@ -158,3 +158,10 @@ func TestBrowseBySubjectAndAuthor(t *testing.T) {
 	// The subject list shows counts.
 	wantBody(t, env.client().get("/catalogue"), `Children</a> <span class="muted">2</span>`)
 }
+
+func TestNavMarksCurrentPage(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	wantBody(t, lib.get("/members"), `<a href="/members" class="active" aria-current="page">Members</a>`,
+		`<a href="/desk">Desk</a>`)
+}

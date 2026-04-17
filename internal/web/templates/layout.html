@@ -13,22 +13,23 @@
   <script src="/static/app.js" defer></script>
 </head>
 <body hx-headers='{"X-CSRF-Token": "{{.CSRF}}"}'>
+  <a class="skip-link" href="#main">Skip to content</a>
   <header class="topbar">
     <a class="brand" href="/">Bookshelf</a>
-    <nav class="nav">
-      <a href="/catalogue">Catalogue</a>
+    <nav class="nav" aria-label="Main">
+      {{template "navlink" args "Path" .Path "Href" "/catalogue" "Label" "Catalogue"}}
       {{if and .User .User.IsLibrarian}}
-        <a href="/dashboard">Dashboard</a>
-        <a href="/desk">Desk</a>
-        <a href="/holds">Holds</a>
-        <a href="/overdue">Overdue</a>
-        <a href="/members">Members</a>
-        <a href="/settings">Settings</a>
+        {{template "navlink" args "Path" .Path "Href" "/dashboard" "Label" "Dashboard"}}
+        {{template "navlink" args "Path" .Path "Href" "/desk" "Label" "Desk"}}
+        {{template "navlink" args "Path" .Path "Href" "/holds" "Label" "Holds"}}
+        {{template "navlink" args "Path" .Path "Href" "/overdue" "Label" "Overdue"}}
+        {{template "navlink" args "Path" .Path "Href" "/members" "Label" "Members"}}
+        {{template "navlink" args "Path" .Path "Href" "/settings" "Label" "Settings"}}
       {{end}}
     </nav>
     <div class="account">
       {{if .User}}
-        <a href="/account">My account</a>
+        {{template "navlink" args "Path" .Path "Href" "/account" "Label" "My account"}}
         <form method="post" action="/logout" class="inline">
           {{template "csrf" .}}
           <button type="submit" class="link">Log out</button>
@@ -39,9 +40,11 @@
       {{end}}
     </div>
   </header>
-  <main class="container">
+  <main class="container" id="main">
     {{with .Flash}}<p class="alert ok flash" role="status">{{.}}</p>{{end}}
     {{template "content" .}}
   </main>
 </body>
 </html>{{end}}
+
+{{define "navlink"}}<a href="{{.Href}}"{{if hasPrefix .Path .Href}} class="active" aria-current="page"{{end}}>{{.Label}}</a>{{end}}
