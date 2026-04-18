@@ -2,7 +2,10 @@
 {{$d := .Data}}
 <div class="page-head">
   <h1>Overdue</h1>
-  {{if $d.Loans}}<p class="muted">{{len $d.Loans}} {{if eq (len $d.Loans) 1}}item{{else}}items{{end}}, {{money $d.Total $d.Currency}} in fines so far</p>{{end}}
+  {{if $d.Loans}}
+  <p class="muted">{{len $d.Loans}} {{if eq (len $d.Loans) 1}}item{{else}}items{{end}}, {{money $d.Total $d.Currency}} in fines so far
+    · <a href="/overdue.csv" download>Download CSV</a></p>
+  {{end}}
 </div>
 {{if $d.Loans}}
 <table class="table">

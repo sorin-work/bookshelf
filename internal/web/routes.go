@@ -40,6 +40,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /holds/{id}/cancel", s.requireUser(s.cancelHold))
 	mux.HandleFunc("GET /holds", s.requireLibrarian(s.holds))
 	mux.HandleFunc("GET /overdue", s.requireLibrarian(s.overdue))
+	mux.HandleFunc("GET /overdue.csv", s.requireLibrarian(s.overdueCSV))
 	mux.HandleFunc("GET /dashboard", s.requireLibrarian(s.dashboard))
 
 	mux.HandleFunc("GET /desk", s.requireLibrarian(s.desk))

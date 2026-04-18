@@ -60,4 +60,20 @@ func TestOverdueList(t *testing.T) {
 	r := c.lib.get("/overdue")
 	wantBody(t, r, "Dune", "Mo Member", "mo@example.com", "1 day", "€0.25")
 	wantStatus(t, c.member.get("/overdue"), http.StatusForbidden)
+
+	r = c.lib.get("/overdue.csv")
+	wantStatus(t, r, http.StatusOK)
+	if ct := r.header.Get("Content-Type"); ct != "text/csv; charset=utf-8" {
+		t.Errorf("Content-Type = %q", ct)
+	}
+	wantBody(t, r, "member,email,phone,card,title,barcode,due,days_overdue,fine\n",
+		"Mo Member,mo@example.com,,"+c.mo.CardNumber+",Dune,C01,2026-03-31,1,0.25\n")
+}
+
+func TestCSVSafe(t *testing.T) {
+	for in, want := range map[string]string{"Dune": "Dune", "=HYPERLINK()": "'=HYPERLINK()", "+40 722": "'+40 722", "": ""} {
+		if got := csvSafe(in); got != want {
+			t.Errorf("csvSafe(%q) = %q, want %q", in, got, want)
+		}
+	}
 }
