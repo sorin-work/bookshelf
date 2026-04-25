@@ -24,6 +24,10 @@ func TestDashboard(t *testing.T) {
 		"2 loans",
 	)
 	wantStatus(t, c.member.get("/dashboard"), http.StatusForbidden)
+
+	wantBody(t, c.lib.get("/dashboard"), "Nothing is due back in the next three days.")
+	c.env.now = c.env.now.AddDate(0, 0, 19)
+	wantBody(t, c.lib.get("/dashboard"), "<td>Tue 31 Mar</td><td><a href=\"/titles/1\">Dune</a></td>")
 }
 
 func TestTimesShownInLibraryTimeZone(t *testing.T) {

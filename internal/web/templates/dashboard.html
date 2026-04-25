@@ -41,6 +41,20 @@
 </div>
 
 <section>
+  <h2>Due back in the next few days</h2>
+  {{if $d.DueSoon}}
+  <table class="table">
+    <thead><tr><th>Due</th><th>Title</th><th>Member</th></tr></thead>
+    <tbody>
+    {{range $d.DueSoon}}
+      <tr><td>{{.Due.Format "Mon 2 Jan"}}</td><td><a href="/titles/{{.TitleID}}">{{.Title}}</a></td><td><a href="/members/{{.UserID}}">{{.MemberName}}</a></td></tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="muted">Nothing is due back in the next three days.</p>{{end}}
+</section>
+
+<section>
   <h2>Collection</h2>
   <p class="muted">{{$s.Titles}} titles, {{$s.Copies}} copies in circulation ({{$s.Available}} on the shelf), {{$s.Members}} members.</p>
 </section>

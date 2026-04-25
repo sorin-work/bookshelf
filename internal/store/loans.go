@@ -106,6 +106,12 @@ func (s *Store) LoanHistory(ctx context.Context, userID int64, limit int) ([]Loa
 		ORDER BY l.returned_at DESC LIMIT ?`, userID, limit)
 }
 
+// DueBetween lists open loans due from first to last inclusive.
+func (s *Store) DueBetween(ctx context.Context, first, last domain.Date) ([]LoanRow, error) {
+	return queryLoans(ctx, s.db, `WHERE l.returned_at IS NULL AND l.due_on BETWEEN ? AND ?
+		ORDER BY l.due_on, u.name COLLATE NOCASE`, first.String(), last.String())
+}
+
 // OverdueLoans lists open loans due before today, longest overdue first.
 func (s *Store) OverdueLoans(ctx context.Context, today domain.Date) ([]LoanRow, error) {
 	return queryLoans(ctx, s.db, `WHERE l.returned_at IS NULL AND l.due_on < ?
