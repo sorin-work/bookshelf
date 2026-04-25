@@ -18,6 +18,7 @@ import (
 
 	"github.com/sorin-work/bookshelf/internal/auth"
 	"github.com/sorin-work/bookshelf/internal/db"
+	"github.com/sorin-work/bookshelf/internal/domain"
 	"github.com/sorin-work/bookshelf/internal/store"
 )
 
@@ -178,3 +179,12 @@ func wantBody(t *testing.T, r response, substrings ...string) {
 func itoa(n int64) string { return strconv.FormatInt(n, 10) }
 
 func contains(s, sub string) bool { return strings.Contains(s, sub) }
+
+func testDate(t *testing.T, s string) domain.Date {
+	t.Helper()
+	d, err := domain.ParseDate(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return d
+}

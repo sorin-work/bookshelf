@@ -4,9 +4,11 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/sorin-work/bookshelf/internal/domain"
 	"github.com/sorin-work/bookshelf/internal/store"
 )
 
@@ -15,6 +17,22 @@ type overdueLine struct {
 	DaysOverdue int
 	// Fine is what the loan would cost if it came back today.
 	Fine int
+}
+
+// ReminderURL is a mailto link with a polite reminder already written.
+func (l overdueLine) ReminderURL(currency string) string {
+	body := fmt.Sprintf("Hello %s,\n\n"+
+		"\"%s\" (copy %s) was due back on %s and is now %d %s late.",
+		l.MemberName, l.Title, l.Barcode, l.Due.Format("Monday 2 January"), l.DaysOverdue, plural(l.DaysOverdue, "day", "days"))
+	if l.Fine > 0 {
+		body += " The late fine so far is " + domain.Policy{Currency: currency}.FormatMoney(l.Fine) + "."
+	}
+	body += "\n\nPlease bring it back when you can, or reply if you think this is a mistake.\n\nThank you!"
+	q := url.Values{}
+	q.Set("subject", "Overdue library book: "+l.Title)
+	q.Set("body", body)
+	// mailto wants %20 for spaces, not +.
+	return "mailto:" + l.MemberEmail + "?" + strings.ReplaceAll(q.Encode(), "+", "%20")
 }
 
 type overduePage struct {

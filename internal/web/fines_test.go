@@ -77,3 +77,20 @@ func TestCSVSafe(t *testing.T) {
 		}
 	}
 }
+
+func TestReminderURL(t *testing.T) {
+	l := overdueLine{DaysOverdue: 3, Fine: 75}
+	l.MemberName, l.MemberEmail, l.Title, l.Barcode = "Mo", "mo@example.com", "Dune & Co", "C01"
+	l.Due = testDate(t, "2026-03-31")
+	got := l.ReminderURL("€")
+	for _, want := range []string{
+		"mailto:mo@example.com?",
+		"subject=Overdue%20library%20book%3A%20Dune%20%26%20Co",
+		"is%20now%203%20days%20late",
+		"%E2%82%AC0.75",
+	} {
+		if !contains(got, want) {
+			t.Errorf("%s\ndoes not contain %s", got, want)
+		}
+	}
+}

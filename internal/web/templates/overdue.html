@@ -9,7 +9,7 @@
 </div>
 {{if $d.Loans}}
 <table class="table">
-  <thead><tr><th>Title</th><th>Copy</th><th>Member</th><th>Contact</th><th>Due</th><th>Late</th><th>Fine so far</th></tr></thead>
+  <thead><tr><th>Title</th><th>Copy</th><th>Member</th><th>Contact</th><th>Due</th><th>Late</th><th>Fine so far</th><th></th></tr></thead>
   <tbody>
   {{range $d.Loans}}
     <tr>
@@ -20,6 +20,7 @@
       <td>{{.Due.Format "2 Jan"}}</td>
       <td>{{.DaysOverdue}} {{if eq .DaysOverdue 1}}day{{else}}days{{end}}</td>
       <td>{{money .Fine $d.Currency}}</td>
+      <td class="row-actions"><a href="{{.ReminderURL $d.Currency}}">Email a reminder</a></td>
     </tr>
   {{end}}
   </tbody>
