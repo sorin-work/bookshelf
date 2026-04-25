@@ -152,3 +152,31 @@ func (s *Server) setCopyStatus(w http.ResponseWriter, r *http.Request) {
 	s.log.Info("copy status changed", "copy_id", id, "status", status, "by", currentUser(r).ID)
 	http.Redirect(w, r, fmt.Sprintf("/titles/%d#copies", c.TitleID), http.StatusSeeOther)
 }
+
+func (s *Server) updateCopy(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(r)
+	if !ok {
+		s.notFound(w, r)
+		return
+	}
+	shelf := strings.TrimSpace(r.PostFormValue("shelf"))
+	note := strings.TrimSpace(r.PostFormValue("note"))
+	if utf8.RuneCountInString(shelf) > 60 || utf8.RuneCountInString(note) > 500 {
+		http.Error(w, "Keep the shelf under 60 characters and the note under 500.", http.StatusUnprocessableEntity)
+		return
+	}
+	c, err := s.store.CopyByID(r.Context(), id)
+	if errors.Is(err, store.ErrNotFound) {
+		s.notFound(w, r)
+		return
+	}
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	if err := s.store.UpdateCopy(r.Context(), id, shelf, note); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/titles/%d#copies", c.TitleID), http.StatusSeeOther)
+}

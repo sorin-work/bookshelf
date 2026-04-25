@@ -308,3 +308,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
   .search { flex-wrap: wrap; }
   .hero h1 { font-size: 1.7rem; }
 }
+
+details.edit-copy summary { cursor: pointer; }
+details.edit-copy .inline-form input { max-width: 12rem; }
+button.danger-link { color: var(--danger); }

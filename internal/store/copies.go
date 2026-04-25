@@ -141,3 +141,15 @@ func (s *Store) CopiesWithWhereabouts(ctx context.Context, titleID int64) ([]Cop
 	}
 	return out, rows.Err()
 }
+
+// UpdateCopy changes a copy's shelf and note.
+func (s *Store) UpdateCopy(ctx context.Context, id int64, shelf, note string) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE copies SET shelf = ?, note = ? WHERE id = ?`, shelf, note, id)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

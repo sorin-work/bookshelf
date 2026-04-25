@@ -225,3 +225,32 @@ func (s *Server) titlePage(w http.ResponseWriter, r *http.Request) {
 	}
 	s.render(w, r, http.StatusOK, "title.html", page{Title: v.Title.Title, Data: v})
 }
+
+func (s *Server) deleteTitle(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(r)
+	if !ok {
+		s.notFound(w, r)
+		return
+	}
+	t, err := s.store.TitleByID(r.Context(), id)
+	if errors.Is(err, store.ErrNotFound) {
+		s.notFound(w, r)
+		return
+	}
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	err = s.store.DeleteTitle(r.Context(), id)
+	if errors.Is(err, store.ErrTitleInUse) {
+		http.Error(w, "This title has copies. Withdraw them instead of deleting the title.", http.StatusConflict)
+		return
+	}
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	s.log.Info("title deleted", "title_id", id, "by", currentUser(r).ID)
+	s.setFlash(w, "Deleted "+t.Title+".")
+	http.Redirect(w, r, "/catalogue", http.StatusSeeOther)
+}

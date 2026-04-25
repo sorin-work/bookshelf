@@ -313,3 +313,33 @@ func (s *Store) Subjects(ctx context.Context) ([]SubjectCount, error) {
 	}
 	return out, rows.Err()
 }
+
+var ErrTitleInUse = errors.New("the title still has copies")
+
+// DeleteTitle removes a title that was added by mistake. Titles with
+// copies can't be deleted: withdraw the copies instead, so loan history
+// keeps pointing somewhere.
+func (s *Store) DeleteTitle(ctx context.Context, id int64) error {
+	return s.inTx(ctx, func(tx *sql.Tx) error {
+		var copies int
+		if err := tx.QueryRowContext(ctx, `SELECT count(*) FROM copies WHERE title_id = ?`, id).Scan(&copies); err != nil {
+			return err
+		}
+		if copies > 0 {
+			return ErrTitleInUse
+		}
+		res, err := tx.ExecContext(ctx, `DELETE FROM titles WHERE id = ?`, id)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return ErrNotFound
+		}
+		// Forget authors and subjects nothing refers to any more.
+		if _, err := tx.ExecContext(ctx, `DELETE FROM authors WHERE id NOT IN (SELECT author_id FROM title_authors)`); err != nil {
+			return err
+		}
+		_, err = tx.ExecContext(ctx, `DELETE FROM subjects WHERE id NOT IN (SELECT subject_id FROM title_subjects)`)
+		return err
+	})
+}

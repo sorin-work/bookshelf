@@ -165,3 +165,28 @@ func TestNavMarksCurrentPage(t *testing.T) {
 	wantBody(t, lib.get("/members"), `<a href="/members" class="active" aria-current="page">Members</a>`,
 		`<a href="/desk">Desk</a>`)
 }
+
+func TestDeleteTitle(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	loc := lib.addTitle("title", "Typo Titel", "authors", "Nobody Else")
+	keep := lib.addTitle("title", "Matilda")
+	wantStatus(t, lib.post(keep+"/copies", titleValues("barcode", "M-01")), http.StatusSeeOther)
+
+	wantStatus(t, lib.post(keep+"/delete", nil), http.StatusConflict)
+	wantRedirect(t, lib.post(loc+"/delete", nil), "/catalogue")
+	wantStatus(t, lib.get(loc), http.StatusNotFound)
+	if strings.Contains(lib.get("/catalogue?author=Nobody+Else").body, "Typo") {
+		t.Error("deleted title still listed")
+	}
+}
+
+func TestEditCopy(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	loc := lib.addTitle("title", "Matilda")
+	lib.post(loc+"/copies", titleValues("barcode", "M-01", "shelf", "Children"))
+	c, _ := env.store.CopyByBarcode(t.Context(), "M-01")
+	wantRedirect(t, lib.post("/copies/"+itoa(c.ID), titleValues("shelf", "Children D", "note", "Spine taped")), loc+"#copies")
+	wantBody(t, lib.get(loc), "Children D · Spine taped")
+}
