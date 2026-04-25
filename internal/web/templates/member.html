@@ -49,7 +49,10 @@
 <section>
   <div class="page-head">
     <h2>On loan</h2>
-    <a class="button secondary" href="/desk?card={{$m.CardNumber}}">Check out to {{$m.Name}}</a>
+    <div class="actions">
+      {{if .Data.Loans}}<a class="button secondary" href="/members/{{$m.ID}}/slip" target="_blank">Print due dates</a>{{end}}
+      <a class="button secondary" href="/desk?card={{$m.CardNumber}}">Check out to {{$m.Name}}</a>
+    </div>
   </div>
   {{template "loan_table" args "Page" $ "Loans" .Data.Loans "Empty" "Nothing on loan right now."}}
 </section>

@@ -35,7 +35,8 @@
 {{with .Data.Result}}
   <div class="alert {{if .OK}}ok{{else}}error{{end}}">
     <p>{{.Message}}</p>
-    {{with .Loan}}{{if not .Returned}}<p><strong>Due {{.Due.Format "Mon 2 Jan"}}</strong> · copy {{.Barcode}}</p>{{end}}{{end}}
+    {{with .Loan}}{{if not .Returned}}<p><strong>Due {{.Due.Format "Mon 2 Jan"}}</strong> · copy {{.Barcode}}
+      · <a href="/members/{{.UserID}}/slip?loans={{.ID}}" target="_blank">Print slip</a></p>{{end}}{{end}}
   </div>
   {{with .Hold}}
   <div class="alert hold">

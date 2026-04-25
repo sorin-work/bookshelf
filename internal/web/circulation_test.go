@@ -174,3 +174,23 @@ func TestDeskMemberSummary(t *testing.T) {
 	}
 	wantBody(t, c.lib.get("/desk?card="+c.mo.CardNumber), "Mo Member", "1 overdue")
 }
+
+func TestDueDateSlip(t *testing.T) {
+	c := newCirc(t)
+	path := "/members/" + itoa(c.mo.ID) + "/slip"
+	wantStatus(t, c.lib.get(path), http.StatusNotFound)
+
+	c.checkout("C01")
+	c.checkout("C02")
+	loans, _ := c.env.store.ActiveLoans(t.Context(), c.mo.ID)
+
+	r := c.lib.get(path)
+	wantStatus(t, r, http.StatusOK)
+	wantBody(t, r, "Mo Member", c.mo.FormattedCard(), "C01", "C02", "Tue 31 Mar")
+
+	r = c.lib.get(path + "?loans=" + itoa(loans[1].ID))
+	if contains(r.body, loans[0].Barcode) || !contains(r.body, loans[1].Barcode) {
+		t.Errorf("slip for one loan:\n%s", r.body)
+	}
+	wantStatus(t, c.member.get(path), http.StatusForbidden)
+}

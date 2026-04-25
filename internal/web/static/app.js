@@ -14,3 +14,10 @@ document.addEventListener("htmx:afterRequest", (event) => {
     field.focus();
   }
 });
+
+// Slips print themselves when opened.
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.body.hasAttribute("data-print")) {
+    window.print();
+  }
+});

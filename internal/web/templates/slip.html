@@ -1,0 +1,22 @@
+{{define "content"}}{{end}}
+{{define "slip"}}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Due date slip · {{.Data.Member.Name}}</title>
+  <link rel="stylesheet" href="/static/slip.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body class="slip" data-print>
+  <h1>Bookshelf</h1>
+  <p>{{.Data.Member.Name}}<br>Card {{.Data.Member.FormattedCard}}</p>
+  <table>
+    <thead><tr><th>Title</th><th>Due</th></tr></thead>
+    <tbody>
+    {{range .Data.Loans}}<tr><td>{{.Title}}<br><small>{{.Barcode}}</small></td><td>{{.Due.Format "Mon 2 Jan"}}</td></tr>{{end}}
+    </tbody>
+  </table>
+  <p class="small">Renew online from your account page or at the desk.</p>
+  <p class="no-print"><a href="/members/{{.Data.Member.ID}}">Back to {{.Data.Member.Name}}</a></p>
+</body>
+</html>{{end}}

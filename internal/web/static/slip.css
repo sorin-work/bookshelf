@@ -1,0 +1,18 @@
+/* Sized for an 80 mm receipt printer; fine on A4 too. */
+body.slip {
+  font-family: ui-monospace, "DejaVu Sans Mono", monospace;
+  font-size: 12px;
+  width: 72mm;
+  margin: 4mm;
+  color: #000;
+  background: #fff;
+}
+.slip h1 { font-size: 16px; margin: 0 0 4px; }
+.slip table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.slip th, .slip td { text-align: left; padding: 3px 0; border-bottom: 1px dashed #000; vertical-align: top; }
+.slip td:last-child, .slip th:last-child { text-align: right; white-space: nowrap; padding-left: 6px; }
+.slip .small { font-size: 10px; }
+@media print {
+  .no-print { display: none; }
+  @page { margin: 0; }
+}
