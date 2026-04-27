@@ -1,0 +1,30 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="narrow wide">
+  <h1>Import titles</h1>
+  {{if $d.Added}}
+    <p class="alert ok">Added {{$d.Added}} {{if eq $d.Added 1}}title{{else}}titles{{end}} and {{$d.Copies}} {{if eq $d.Copies 1}}copy{{else}}copies{{end}}. <a href="/catalogue">See the catalogue</a></p>
+  {{end}}
+  {{if $d.Skipped}}
+    <p class="alert hold">Already in the catalogue, so skipped: {{range $i, $t := $d.Skipped}}{{if $i}}, {{end}}{{$t}}{{end}}.</p>
+  {{end}}
+  {{if $d.Problems}}
+    <div class="alert error">
+      <p><strong>Nothing was imported.</strong> Fix these and upload the file again:</p>
+      <ul>{{range $d.Problems}}<li>{{if .Line}}Line {{.Line}}: {{end}}{{.Message}}</li>{{end}}</ul>
+    </div>
+  {{end}}
+  <form method="post" action="/titles/import" enctype="multipart/form-data" class="card">
+    {{template "csrf" .}}
+    <div class="field">
+      <label for="file">CSV file</label>
+      <input id="file" name="file" type="file" accept=".csv,text/csv" required>
+    </div>
+    <p class="hint">The first row names the columns: <code>title</code> and any of
+      <code>isbn</code>, <code>subtitle</code>, <code>authors</code>, <code>subjects</code>, <code>publisher</code>,
+      <code>year</code>, <code>description</code>, <code>cover_url</code> and <code>barcodes</code>.
+      Separate several authors, subjects or barcodes in one cell with semicolons. Each barcode becomes a copy.</p>
+    <button type="submit">Import</button>
+  </form>
+</div>
+{{end}}

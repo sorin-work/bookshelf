@@ -2,7 +2,12 @@
 {{$d := .Data}}
 <div class="page-head">
   <h1>Catalogue</h1>
-  {{if and .User .User.IsLibrarian}}<a class="button" href="/titles/new">Add a title</a>{{end}}
+  {{if and .User .User.IsLibrarian}}
+  <div class="actions">
+    <a class="button secondary" href="/titles/import">Import from CSV</a>
+    <a class="button" href="/titles/new">Add a title</a>
+  </div>
+  {{end}}
 </div>
 <div class="catalogue">
   <div>
