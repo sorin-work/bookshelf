@@ -31,6 +31,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /catalogue", s.catalogue)
 	mux.HandleFunc("GET /titles/new", s.requireLibrarian(s.newTitlePage))
 	mux.HandleFunc("POST /titles", s.requireLibrarian(s.createTitle))
+	mux.HandleFunc("GET /titles/lookup", s.requireLibrarian(s.lookupTitle))
 	mux.HandleFunc("GET /titles/import", s.requireLibrarian(s.importPage))
 	mux.HandleFunc("POST /titles/import", s.requireLibrarian(s.importTitles))
 	mux.HandleFunc("GET /titles/{id}", s.titlePage)

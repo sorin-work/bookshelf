@@ -4,12 +4,14 @@
 package web
 
 import (
+	"context"
 	"html/template"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/sorin-work/bookshelf/internal/domain"
+	"github.com/sorin-work/bookshelf/internal/openlibrary"
 	"github.com/sorin-work/bookshelf/internal/store"
 )
 
@@ -18,6 +20,8 @@ type Options struct {
 	Logger        *slog.Logger
 	SecureCookies bool
 	SessionTTL    time.Duration
+	// Books looks titles up by ISBN. Nil switches the lookup off.
+	Books BookLookup
 	// Location is the library's time zone; defaults to UTC.
 	Location *time.Location
 	// Now returns the current time; tests replace it.
@@ -33,6 +37,12 @@ type Server struct {
 	now           func() time.Time
 	pages         map[string]*template.Template
 	logins        *loginLimiter
+	books         BookLookup
+}
+
+// BookLookup finds book details by ISBN-13.
+type BookLookup interface {
+	Lookup(ctx context.Context, isbn string) (openlibrary.Book, error)
 }
 
 func New(o Options) (*Server, error) {
@@ -44,6 +54,7 @@ func New(o Options) (*Server, error) {
 		loc:           o.Location,
 		now:           o.Now,
 		logins:        newLoginLimiter(5, 15*time.Minute),
+		books:         o.Books,
 	}
 	if s.loc == nil {
 		s.loc = time.UTC

@@ -20,6 +20,8 @@ type Config struct {
 	SecureCookies bool
 	SessionTTL    time.Duration
 	SeedDemo      bool
+	// OpenLibraryURL is where ISBN lookups go; empty switches them off.
+	OpenLibraryURL string
 	// Location is the library's time zone. Due dates and "today" are
 	// worked out in it.
 	Location *time.Location
@@ -34,6 +36,10 @@ func load(getenv func(string) string) (Config, error) {
 		Addr:      envOr(getenv, "ADDR", ":4409"),
 		DBPath:    envOr(getenv, "DB_PATH", "bookshelf.db"),
 		LogFormat: envOr(getenv, "LOG_FORMAT", "json"),
+	}
+	c.OpenLibraryURL = envOr(getenv, "OPENLIBRARY_URL", "https://openlibrary.org")
+	if c.OpenLibraryURL == "off" {
+		c.OpenLibraryURL = ""
 	}
 
 	if err := c.LogLevel.UnmarshalText([]byte(envOr(getenv, "LOG_LEVEL", "info"))); err != nil {

@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/sorin-work/bookshelf/internal/domain"
+	"github.com/sorin-work/bookshelf/internal/openlibrary"
 	"github.com/sorin-work/bookshelf/internal/store"
 )
 
@@ -26,6 +27,10 @@ type titleForm struct {
 	Authors     string
 	Subjects    string
 	Errors      formErrors
+	// Lookup offers the Open Library button.
+	Lookup bool
+	// Found is a note shown after a successful lookup.
+	Found string
 }
 
 func titleFormFrom(t store.Title) titleForm {
@@ -46,19 +51,23 @@ func titleFormFrom(t store.Title) titleForm {
 	return f
 }
 
-func parseTitleForm(r *http.Request, currentYear int) (store.TitleInput, titleForm) {
-	f := titleForm{
-		ISBN:        strings.TrimSpace(r.PostFormValue("isbn")),
-		Title:       strings.TrimSpace(r.PostFormValue("title")),
-		Subtitle:    strings.TrimSpace(r.PostFormValue("subtitle")),
-		Publisher:   strings.TrimSpace(r.PostFormValue("publisher")),
-		Year:        strings.TrimSpace(r.PostFormValue("year")),
-		Description: strings.TrimSpace(r.PostFormValue("description")),
-		CoverURL:    strings.TrimSpace(r.PostFormValue("cover_url")),
-		Authors:     r.PostFormValue("authors"),
-		Subjects:    r.PostFormValue("subjects"),
+func readTitleForm(r *http.Request) titleForm {
+	return titleForm{
+		ISBN:        strings.TrimSpace(r.FormValue("isbn")),
+		Title:       strings.TrimSpace(r.FormValue("title")),
+		Subtitle:    strings.TrimSpace(r.FormValue("subtitle")),
+		Publisher:   strings.TrimSpace(r.FormValue("publisher")),
+		Year:        strings.TrimSpace(r.FormValue("year")),
+		Description: strings.TrimSpace(r.FormValue("description")),
+		CoverURL:    strings.TrimSpace(r.FormValue("cover_url")),
+		Authors:     r.FormValue("authors"),
+		Subjects:    r.FormValue("subjects"),
 		Errors:      formErrors{},
 	}
+}
+
+func parseTitleForm(r *http.Request, currentYear int) (store.TitleInput, titleForm) {
+	f := readTitleForm(r)
 	in := store.TitleInput{
 		Title:       f.Title,
 		Subtitle:    f.Subtitle,
@@ -140,7 +149,57 @@ func pathID(r *http.Request) (int64, bool) {
 }
 
 func (s *Server) newTitlePage(w http.ResponseWriter, r *http.Request) {
-	s.render(w, r, http.StatusOK, "title_form.html", page{Title: "Add a title", Data: titleForm{}})
+	s.render(w, r, http.StatusOK, "title_form.html", page{Title: "Add a title", Data: titleForm{Lookup: s.books != nil}})
+}
+
+// lookupTitle fills in the title form from Open Library. Fields the
+// librarian already typed are kept.
+func (s *Server) lookupTitle(w http.ResponseWriter, r *http.Request) {
+	f := readTitleForm(r)
+	f.Lookup = s.books != nil
+	respond := func() {
+		s.execute(w, r, http.StatusOK, "title_form.html", "title_fields", page{Data: f})
+	}
+	isbn, err := domain.NormalizeISBN(f.ISBN)
+	if err != nil {
+		f.Errors["isbn"] = "Enter a valid ISBN to look it up. " + capitalise(err.Error()) + "."
+		respond()
+		return
+	}
+	if s.books == nil {
+		f.Errors["isbn"] = "Looking titles up is switched off."
+		respond()
+		return
+	}
+	b, err := s.books.Lookup(r.Context(), isbn)
+	switch {
+	case errors.Is(err, openlibrary.ErrNotFound):
+		f.Errors["isbn"] = "Open Library doesn't know this ISBN. Fill in the details by hand."
+		respond()
+		return
+	case err != nil:
+		s.log.Warn("open library lookup failed", "isbn", isbn, "err", err)
+		f.Errors["isbn"] = "Open Library didn't answer. Try again in a moment, or fill in the details by hand."
+		respond()
+		return
+	}
+	fill := func(dst *string, v string) {
+		if *dst == "" {
+			*dst = v
+		}
+	}
+	f.ISBN = isbn
+	fill(&f.Title, b.Title)
+	fill(&f.Subtitle, b.Subtitle)
+	fill(&f.Publisher, b.Publisher)
+	fill(&f.CoverURL, b.CoverURL)
+	fill(&f.Authors, strings.Join(b.Authors, "\n"))
+	fill(&f.Subjects, strings.Join(b.Subjects, ", "))
+	if b.Year != 0 {
+		fill(&f.Year, strconv.Itoa(b.Year))
+	}
+	f.Found = "Filled in from Open Library. Check the details before saving."
+	respond()
 }
 
 func (s *Server) createTitle(w http.ResponseWriter, r *http.Request) {

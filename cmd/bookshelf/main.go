@@ -16,6 +16,7 @@ import (
 	"github.com/sorin-work/bookshelf/internal/config"
 	"github.com/sorin-work/bookshelf/internal/db"
 	"github.com/sorin-work/bookshelf/internal/domain"
+	"github.com/sorin-work/bookshelf/internal/openlibrary"
 	"github.com/sorin-work/bookshelf/internal/seed"
 	"github.com/sorin-work/bookshelf/internal/store"
 	"github.com/sorin-work/bookshelf/internal/web"
@@ -64,7 +65,13 @@ func run() error {
 		}
 	}
 
+	var books web.BookLookup
+	if cfg.OpenLibraryURL != "" {
+		books = openlibrary.New(cfg.OpenLibraryURL)
+	}
+
 	app, err := web.New(web.Options{
+		Books:         books,
 		Store:         st,
 		Logger:        log,
 		SecureCookies: cfg.SecureCookies,

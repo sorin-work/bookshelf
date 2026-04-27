@@ -1,10 +1,14 @@
 package web
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/sorin-work/bookshelf/internal/openlibrary"
 )
 
 // librarian signs up the first account, which makes it the librarian.
@@ -189,4 +193,34 @@ func TestEditCopy(t *testing.T) {
 	c, _ := env.store.CopyByBarcode(t.Context(), "M-01")
 	wantRedirect(t, lib.post("/copies/"+itoa(c.ID), titleValues("shelf", "Children D", "note", "Spine taped")), loc+"#copies")
 	wantBody(t, lib.get(loc), "Children D · Spine taped")
+}
+
+type fakeBooks map[string]openlibrary.Book
+
+func (f fakeBooks) Lookup(_ context.Context, isbn string) (openlibrary.Book, error) {
+	if isbn == "9780000000002" {
+		return openlibrary.Book{}, errors.New("timeout")
+	}
+	b, ok := f[isbn]
+	if !ok {
+		return openlibrary.Book{}, openlibrary.ErrNotFound
+	}
+	return b, nil
+}
+
+func TestLookupTitle(t *testing.T) {
+	env := newTestEnv(t)
+	env.books = fakeBooks{"9780441172719": {Title: "Dune", Authors: []string{"Frank Herbert"}, Year: 1965, Subjects: []string{"Science fiction"}}}
+	lib := env.librarian()
+
+	wantBody(t, lib.get("/titles/new"), "Fill in from Open Library")
+
+	r := lib.get("/titles/lookup?isbn=0-441-17271-7&publisher=My+own+edition")
+	wantStatus(t, r, http.StatusOK)
+	wantBody(t, r, `value="9780441172719"`, `value="Dune"`, "Frank Herbert", `value="1965"`,
+		`value="My own edition"`, "Filled in from Open Library")
+
+	wantBody(t, lib.get("/titles/lookup?isbn=9780306406157"), "doesn&#39;t know this ISBN")
+	wantBody(t, lib.get("/titles/lookup?isbn=9780000000002"), "didn&#39;t answer")
+	wantBody(t, lib.get("/titles/lookup?isbn=123"), "Enter a valid ISBN")
 }

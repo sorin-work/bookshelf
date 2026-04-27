@@ -19,6 +19,7 @@ import (
 	"github.com/sorin-work/bookshelf/internal/auth"
 	"github.com/sorin-work/bookshelf/internal/db"
 	"github.com/sorin-work/bookshelf/internal/domain"
+	"github.com/sorin-work/bookshelf/internal/openlibrary"
 	"github.com/sorin-work/bookshelf/internal/store"
 )
 
@@ -34,6 +35,8 @@ type testEnv struct {
 	srv   *httptest.Server
 	store *store.Store
 	now   time.Time
+	// books answers ISBN lookups; nil means none are configured.
+	books BookLookup
 }
 
 func newTestEnv(t *testing.T) *testEnv {
@@ -61,6 +64,12 @@ func newTestEnvIn(t *testing.T, loc *time.Location) *testEnv {
 		// Long enough for tests that move the clock forward by months.
 		SessionTTL: testSessionTTL,
 		Now:        func() time.Time { return env.now },
+		Books: lookupFunc(func(ctx context.Context, isbn string) (openlibrary.Book, error) {
+			if env.books == nil {
+				return openlibrary.Book{}, openlibrary.ErrNotFound
+			}
+			return env.books.Lookup(ctx, isbn)
+		}),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -187,4 +196,10 @@ func testDate(t *testing.T, s string) domain.Date {
 		t.Fatal(err)
 	}
 	return d
+}
+
+type lookupFunc func(ctx context.Context, isbn string) (openlibrary.Book, error)
+
+func (f lookupFunc) Lookup(ctx context.Context, isbn string) (openlibrary.Book, error) {
+	return f(ctx, isbn)
 }
