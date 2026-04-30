@@ -30,6 +30,9 @@ func TestLoadDefaults(t *testing.T) {
 	if c.Location != time.UTC {
 		t.Errorf("Location = %v", c.Location)
 	}
+	if c.OpenLibraryURL != "https://openlibrary.org" {
+		t.Errorf("OpenLibraryURL = %q", c.OpenLibraryURL)
+	}
 }
 
 func TestLoadOverrides(t *testing.T) {
@@ -78,5 +81,15 @@ func TestLoadErrors(t *testing.T) {
 				t.Error("expected an error")
 			}
 		})
+	}
+}
+
+func TestOpenLibraryOff(t *testing.T) {
+	c, err := load(env(map[string]string{"OPENLIBRARY_URL": "off"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.OpenLibraryURL != "" {
+		t.Errorf("OpenLibraryURL = %q", c.OpenLibraryURL)
 	}
 }
