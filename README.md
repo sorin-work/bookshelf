@@ -10,7 +10,8 @@ their own loans.
 
 - **Catalogue**: titles with ISBN (10 or 13 digits, stored as ISBN-13),
   authors, subjects, publisher, year and a cover image. Search as you type,
-  browse by subject or author.
+  browse by subject or author. New titles can be filled in from Open
+  Library by ISBN, or imported in bulk from a CSV file.
 - **Copies**: each physical copy has its own barcode and shelf; copies can
   be marked lost or withdrawn.
 - **Members and cards**: anyone can sign up online, or a librarian registers
@@ -62,6 +63,7 @@ directory unless `DB_PATH` says otherwise). Migrations run on start.
 | `SECURE_COOKIES`   | `false`        | Mark cookies Secure; turn on when served over https  |
 | `SESSION_TTL`      | `336h`         | How long a login lasts                               |
 | `SEED_DEMO`        | `false`        | Create the demo accounts and library on first start  |
+| `OPENLIBRARY_URL`  | `https://openlibrary.org` | Where ISBN lookups go; `off` disables them |
 | `LOG_LEVEL`        | `info`         | `debug`, `info`, `warn` or `error`                   |
 | `LOG_FORMAT`       | `json`         | `json` or `text`                                     |
 
