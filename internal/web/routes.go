@@ -18,6 +18,9 @@ func (s *Server) routes(mux *http.ServeMux) {
 		http.Redirect(w, r, "/static/favicon.svg", http.StatusMovedPermanently)
 	})
 	mux.HandleFunc("GET /{$}", s.home)
+	// Anything not matched below gets the friendly not found page rather
+	// than the mux's plain text one.
+	mux.HandleFunc("/", s.notFound)
 
 	mux.HandleFunc("GET /signup", s.signupPage)
 	mux.HandleFunc("POST /signup", s.signup)

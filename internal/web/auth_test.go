@@ -150,3 +150,10 @@ func TestLoginThrottling(t *testing.T) {
 	env.now = env.now.Add(16 * time.Minute)
 	wantRedirect(t, env.client().login("ana@example.com", "long enough"), "/")
 }
+
+func TestUnknownPage(t *testing.T) {
+	env := newTestEnv(t)
+	r := env.client().get("/no/such/page")
+	wantStatus(t, r, http.StatusNotFound)
+	wantBody(t, r, "We couldn&#39;t find that page", "<html")
+}
