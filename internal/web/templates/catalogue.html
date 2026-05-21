@@ -64,6 +64,8 @@
     {{if $d.HasPrev}}<a href="{{$d.PrevURL}}">← Previous</a>{{end}}
     {{if $d.HasNext}}<a href="{{$d.NextURL}}">Next →</a>{{end}}
   </nav>
+{{else if $d.Total}}
+  <p class="empty">There are only {{$d.Total}} {{if eq $d.Total 1}}title{{else}}titles{{end}} here. <a href="{{$d.Query.URL 1}}">Back to the first page</a></p>
 {{else if $d.Query.Filtered}}
   <p class="empty">Nothing matches{{with $d.Query.Q}} “{{.}}”{{end}}. Try part of the title or the author's surname.</p>
 {{else}}

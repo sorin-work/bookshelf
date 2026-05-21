@@ -224,3 +224,14 @@ func TestLookupTitle(t *testing.T) {
 	wantBody(t, lib.get("/titles/lookup?isbn=9780000000002"), "didn&#39;t answer")
 	wantBody(t, lib.get("/titles/lookup?isbn=123"), "Enter a valid ISBN")
 }
+
+func TestCataloguePagePastTheEnd(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	lib.addTitle("title", "Dune")
+	r := env.client().get("/catalogue?page=7")
+	wantBody(t, r, "There are only 1 title here.", `href="/catalogue"`)
+	if strings.Contains(r.body, "The catalogue is empty") {
+		t.Error("said the catalogue was empty")
+	}
+}
