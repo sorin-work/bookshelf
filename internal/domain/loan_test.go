@@ -21,6 +21,8 @@ func TestCanRenew(t *testing.T) {
 		{"overdue", Loan{Due: today.AddDays(-1)}, ErrRenewOverdue},
 		{"overdue and at the limit", Loan{Due: today.AddDays(-5), Renewals: 2}, ErrRenewOverdue},
 		{"someone waiting", Loan{Due: today.AddDays(3), HoldsWaiting: 1}, ErrRenewHeld},
+		{"card expired", Loan{Due: today.AddDays(3), CardExpires: today.AddDays(-1)}, ErrCardExpired},
+		{"card expires today", Loan{Due: today.AddDays(3), CardExpires: today}, nil},
 		{"someone waiting and at the limit", Loan{Due: today.AddDays(3), Renewals: 2, HoldsWaiting: 3}, ErrRenewHeld},
 	}
 	for _, tt := range tests {

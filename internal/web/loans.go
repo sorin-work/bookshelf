@@ -50,6 +50,8 @@ func renewalMessage(err error) string {
 		return "Overdue, return it to the desk"
 	case errors.Is(err, domain.ErrRenewHeld):
 		return "Someone else is waiting for it"
+	case errors.Is(err, domain.ErrCardExpired):
+		return "Library card has expired"
 	}
 	return "Can't be renewed"
 }
@@ -79,7 +81,7 @@ func (s *Server) renewLoan(w http.ResponseWriter, r *http.Request) {
 	}
 	renewed, err := s.store.Renew(r.Context(), id, s.today())
 	ruleErr := errors.Is(err, domain.ErrRenewalLimit) || errors.Is(err, domain.ErrRenewOverdue) ||
-		errors.Is(err, domain.ErrRenewHeld) || errors.Is(err, store.ErrNotOnLoan)
+		errors.Is(err, domain.ErrRenewHeld) || errors.Is(err, domain.ErrCardExpired) || errors.Is(err, store.ErrNotOnLoan)
 	if err != nil && !ruleErr {
 		s.serverError(w, r, err)
 		return

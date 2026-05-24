@@ -39,17 +39,19 @@ type LoanRow struct {
 	// HoldsWaiting counts members still queued for the title, which
 	// blocks renewals. Holds that already have a copy set aside do not.
 	HoldsWaiting int
+	CardExpires  domain.Date
 }
 
 func (l LoanRow) Rules() domain.Loan {
-	return domain.Loan{Due: l.Due, Renewals: l.Renewals, HoldsWaiting: l.HoldsWaiting}
+	return domain.Loan{Due: l.Due, Renewals: l.Renewals, HoldsWaiting: l.HoldsWaiting, CardExpires: l.CardExpires}
 }
 
 func (l LoanRow) Returned() bool { return !l.ReturnedAt.IsZero() }
 
 const loanSelect = `SELECT l.id, l.copy_id, c.barcode, t.id, t.title, u.id, u.name, u.email, u.phone,
 	coalesce(u.card_number, ''), l.checked_out_at, l.due_on, l.renewals, coalesce(l.returned_at, ''),
-	(SELECT count(*) FROM holds h WHERE h.title_id = t.id AND h.status = 'waiting')
+	(SELECT count(*) FROM holds h WHERE h.title_id = t.id AND h.status = 'waiting'),
+	coalesce(u.card_expires, '')
 	FROM loans l
 	JOIN copies c ON c.id = l.copy_id
 	JOIN titles t ON t.id = c.title_id
@@ -57,9 +59,9 @@ const loanSelect = `SELECT l.id, l.copy_id, c.barcode, t.id, t.title, u.id, u.na
 
 func scanLoan(row interface{ Scan(...any) error }) (LoanRow, error) {
 	var l LoanRow
-	var out, due, returned string
+	var out, due, returned, cardExpires string
 	err := row.Scan(&l.ID, &l.CopyID, &l.Barcode, &l.TitleID, &l.Title, &l.UserID, &l.MemberName,
-		&l.MemberEmail, &l.MemberPhone, &l.CardNumber, &out, &due, &l.Renewals, &returned, &l.HoldsWaiting)
+		&l.MemberEmail, &l.MemberPhone, &l.CardNumber, &out, &due, &l.Renewals, &returned, &l.HoldsWaiting, &cardExpires)
 	if errors.Is(err, sql.ErrNoRows) {
 		return LoanRow{}, ErrNotFound
 	}
@@ -68,6 +70,7 @@ func scanLoan(row interface{ Scan(...any) error }) (LoanRow, error) {
 	}
 	l.CheckedOutAt = parseTime(out)
 	l.Due, _ = domain.ParseDate(due)
+	l.CardExpires, _ = domain.ParseDate(cardExpires)
 	if returned != "" {
 		l.ReturnedAt = parseTime(returned)
 	}

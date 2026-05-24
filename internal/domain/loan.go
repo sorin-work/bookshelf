@@ -16,6 +16,8 @@ type Loan struct {
 	Renewals int
 	// HoldsWaiting is how many members are queued for the title.
 	HoldsWaiting int
+	// CardExpires is the borrower's card expiry, if known.
+	CardExpires Date
 }
 
 // Overdue reports whether the loan was due before today.
@@ -33,6 +35,9 @@ func (l Loan) DaysOverdue(today Date) int {
 func (p Policy) CanRenew(l Loan, today Date) error {
 	if l.Overdue(today) {
 		return ErrRenewOverdue
+	}
+	if !l.CardExpires.IsZero() && l.CardExpires.Before(today) {
+		return ErrCardExpired
 	}
 	if l.HoldsWaiting > 0 {
 		return ErrRenewHeld
