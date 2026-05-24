@@ -20,6 +20,11 @@ type Config struct {
 	SecureCookies bool
 	SessionTTL    time.Duration
 	SeedDemo      bool
+	// AllowSignup lets anyone create a member account online. School
+	// libraries often turn it off and register everyone at the desk.
+	AllowSignup bool
+	// LibraryName is shown in the header, on slips and in reminders.
+	LibraryName string
 	// OpenLibraryURL is where ISBN lookups go; empty switches them off.
 	OpenLibraryURL string
 	// Location is the library's time zone. Due dates and "today" are
@@ -37,6 +42,7 @@ func load(getenv func(string) string) (Config, error) {
 		DBPath:    envOr(getenv, "DB_PATH", "bookshelf.db"),
 		LogFormat: envOr(getenv, "LOG_FORMAT", "json"),
 	}
+	c.LibraryName = envOr(getenv, "LIBRARY_NAME", "Bookshelf")
 	c.OpenLibraryURL = envOr(getenv, "OPENLIBRARY_URL", "https://openlibrary.org")
 	if c.OpenLibraryURL == "off" {
 		c.OpenLibraryURL = ""
@@ -54,6 +60,9 @@ func load(getenv func(string) string) (Config, error) {
 		return c, err
 	}
 	if c.SeedDemo, err = boolEnv(getenv, "SEED_DEMO", false); err != nil {
+		return c, err
+	}
+	if c.AllowSignup, err = boolEnv(getenv, "ALLOW_SIGNUP", true); err != nil {
 		return c, err
 	}
 	if c.SessionTTL, err = time.ParseDuration(envOr(getenv, "SESSION_TTL", "336h")); err != nil {

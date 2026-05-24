@@ -20,6 +20,11 @@ type Options struct {
 	Logger        *slog.Logger
 	SecureCookies bool
 	SessionTTL    time.Duration
+	// DisableSignup hides the sign up page; members are then registered
+	// at the desk.
+	DisableSignup bool
+	// LibraryName is shown in the header and on slips.
+	LibraryName string
 	// Books looks titles up by ISBN. Nil switches the lookup off.
 	Books BookLookup
 	// Location is the library's time zone; defaults to UTC.
@@ -38,6 +43,8 @@ type Server struct {
 	pages         map[string]*template.Template
 	logins        *loginLimiter
 	books         BookLookup
+	allowSignup   bool
+	libraryName   string
 }
 
 // BookLookup finds book details by ISBN-13.
@@ -55,6 +62,11 @@ func New(o Options) (*Server, error) {
 		now:           o.Now,
 		logins:        newLoginLimiter(5, 15*time.Minute),
 		books:         o.Books,
+		allowSignup:   !o.DisableSignup,
+		libraryName:   o.LibraryName,
+	}
+	if s.libraryName == "" {
+		s.libraryName = "Bookshelf"
 	}
 	if s.loc == nil {
 		s.loc = time.UTC

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{if .Title}}{{.Title}} · {{end}}Bookshelf</title>
+  <title>{{if .Title}}{{.Title}} · {{end}}{{.Library}}</title>
   <meta name="htmx-config" content='{"includeIndicatorStyles": false}'>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/app.css">
@@ -15,7 +15,7 @@
 <body hx-headers='{"X-CSRF-Token": "{{.CSRF}}"}'>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="topbar">
-    <a class="brand" href="/">Bookshelf</a>
+    <a class="brand" href="/">{{.Library}}</a>
     <nav class="nav" aria-label="Main">
       {{template "navlink" args "Path" .Path "Href" "/catalogue" "Label" "Catalogue"}}
       {{if and .User .User.IsLibrarian}}
@@ -36,7 +36,7 @@
         </form>
       {{else}}
         <a href="/login">Log in</a>
-        <a class="button" href="/signup">Sign up</a>
+        {{if .Signup}}<a class="button" href="/signup">Sign up</a>{{end}}
       {{end}}
     </div>
   </header>

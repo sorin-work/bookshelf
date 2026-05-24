@@ -72,6 +72,8 @@ func run() error {
 
 	app, err := web.New(web.Options{
 		Books:         books,
+		DisableSignup: !cfg.AllowSignup,
+		LibraryName:   cfg.LibraryName,
 		Store:         st,
 		Logger:        log,
 		SecureCookies: cfg.SecureCookies,

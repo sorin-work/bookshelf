@@ -29,7 +29,10 @@ type page struct {
 	Flash string
 	// Path is the request path, for highlighting the current nav link.
 	Path string
-	Data any
+	// Library is the library's name; Signup whether sign up is open.
+	Library string
+	Signup  bool
+	Data    any
 }
 
 // templateFuncs are the helpers available in every template. Times are
@@ -110,6 +113,8 @@ func (s *Server) execute(w http.ResponseWriter, r *http.Request, status int, nam
 	p.User = currentUser(r)
 	p.CSRF = csrfToken(r)
 	p.Path = r.URL.Path
+	p.Library = s.libraryName
+	p.Signup = s.allowSignup
 	var buf bytes.Buffer
 	if err := t.ExecuteTemplate(&buf, block, p); err != nil {
 		s.serverError(w, r, fmt.Errorf("render %s/%s: %w", name, block, err))

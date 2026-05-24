@@ -30,6 +30,9 @@ func TestLoadDefaults(t *testing.T) {
 	if c.Location != time.UTC {
 		t.Errorf("Location = %v", c.Location)
 	}
+	if !c.AllowSignup || c.LibraryName != "Bookshelf" {
+		t.Errorf("AllowSignup %v, LibraryName %q", c.AllowSignup, c.LibraryName)
+	}
 	if c.OpenLibraryURL != "https://openlibrary.org" {
 		t.Errorf("OpenLibraryURL = %q", c.OpenLibraryURL)
 	}
@@ -45,6 +48,8 @@ func TestLoadOverrides(t *testing.T) {
 		"SEED_DEMO":        "1",
 		"SESSION_TTL":      "2h",
 		"LIBRARY_TIMEZONE": "Europe/Bucharest",
+		"ALLOW_SIGNUP":     "false",
+		"LIBRARY_NAME":     "Mill Street Library",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -57,6 +62,9 @@ func TestLoadOverrides(t *testing.T) {
 	}
 	if !c.SecureCookies || !c.SeedDemo || c.SessionTTL != 2*time.Hour {
 		t.Errorf("got %+v", c)
+	}
+	if c.AllowSignup || c.LibraryName != "Mill Street Library" {
+		t.Errorf("AllowSignup %v, LibraryName %q", c.AllowSignup, c.LibraryName)
 	}
 	if c.Location.String() != "Europe/Bucharest" {
 		t.Errorf("Location = %v", c.Location)

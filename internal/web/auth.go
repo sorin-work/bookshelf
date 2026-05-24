@@ -18,6 +18,10 @@ type authForm struct {
 }
 
 func (s *Server) signupPage(w http.ResponseWriter, r *http.Request) {
+	if !s.allowSignup {
+		s.notFound(w, r)
+		return
+	}
 	if currentUser(r) != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -26,6 +30,10 @@ func (s *Server) signupPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) signup(w http.ResponseWriter, r *http.Request) {
+	if !s.allowSignup {
+		s.notFound(w, r)
+		return
+	}
 	f := authForm{
 		Name:   strings.TrimSpace(r.PostFormValue("name")),
 		Email:  strings.TrimSpace(r.PostFormValue("email")),
