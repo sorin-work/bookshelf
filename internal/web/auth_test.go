@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
@@ -88,6 +89,16 @@ func TestLoginRedirectsToNext(t *testing.T) {
 		r := c.post("/login", url.Values{"email": {"ana@example.com"}, "password": {"long enough"}, "next": {tt.next}})
 		wantRedirect(t, r, tt.want)
 	}
+}
+
+func TestCrossSitePostRejected(t *testing.T) {
+	env := newTestEnv(t)
+	c := env.client()
+	form := titleValues("name", "Ana", "email", "ana@example.com", "password", "long enough", "csrf_token", c.csrf())
+	req, _ := http.NewRequest(http.MethodPost, env.srv.URL+"/signup", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Sec-Fetch-Site", "cross-site")
+	wantStatus(t, c.do(req), http.StatusForbidden)
 }
 
 func TestCSRFRequired(t *testing.T) {

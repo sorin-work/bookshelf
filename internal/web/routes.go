@@ -6,7 +6,10 @@ import "net/http"
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	s.routes(mux)
-	return s.recoverPanics(s.logRequests(securityHeaders(s.csrf(s.loadUser(mux)))))
+	// The browser's own Sec-Fetch-Site / Origin check runs before the
+	// token check, as a second line of defence against cross-site posts.
+	cop := http.NewCrossOriginProtection()
+	return s.recoverPanics(s.logRequests(securityHeaders(cop.Handler(s.csrf(s.loadUser(mux))))))
 }
 
 // routes registers every page. Anyone may read the catalogue; members
