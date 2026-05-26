@@ -122,7 +122,11 @@ func scanUser(row interface{ Scan(...any) error }) (User, error) {
 }
 
 func (s *Store) UserByID(ctx context.Context, id int64) (User, error) {
-	return scanUser(s.db.QueryRowContext(ctx, `SELECT `+userColumns+` FROM users WHERE id = ?`, id))
+	return userByID(ctx, s.db, id)
+}
+
+func userByID(ctx context.Context, q querier, id int64) (User, error) {
+	return scanUser(q.QueryRowContext(ctx, `SELECT `+userColumns+` FROM users WHERE id = ?`, id))
 }
 
 func (s *Store) UserByEmail(ctx context.Context, email string) (User, error) {

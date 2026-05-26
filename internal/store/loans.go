@@ -137,14 +137,14 @@ func (s *Store) Checkout(ctx context.Context, req CheckoutRequest) (LoanRow, err
 		if err != nil {
 			return err
 		}
-		member, err := scanUser(tx.QueryRowContext(ctx, `SELECT `+userColumns+` FROM users WHERE id = ?`, req.UserID))
+		member, err := userByID(ctx, tx, req.UserID)
 		if err != nil {
 			return err
 		}
 		if !member.Active {
 			return ErrMemberInactive
 		}
-		c, err := scanCopy(tx.QueryRowContext(ctx, `SELECT `+copyColumns+` FROM copies WHERE barcode = ?`, req.Barcode))
+		c, err := copyByBarcode(ctx, tx, req.Barcode)
 		if err != nil {
 			return err
 		}
@@ -226,7 +226,7 @@ func (s *Store) Return(ctx context.Context, barcode string, today domain.Date, n
 			JOIN copies c ON c.id = l.copy_id
 			WHERE c.barcode = ? AND l.returned_at IS NULL`, barcode).Scan(&loanID, &copyID, &userID, &dueOn)
 		if errors.Is(err, sql.ErrNoRows) {
-			if _, err := scanCopy(tx.QueryRowContext(ctx, `SELECT `+copyColumns+` FROM copies WHERE barcode = ?`, barcode)); err != nil {
+			if _, err := copyByBarcode(ctx, tx, barcode); err != nil {
 				return err
 			}
 			return ErrNotOnLoan

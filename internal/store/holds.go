@@ -98,7 +98,7 @@ func (s *Store) PlaceHold(ctx context.Context, userID, titleID int64, today doma
 		if err != nil {
 			return err
 		}
-		member, err := scanUser(tx.QueryRowContext(ctx, `SELECT `+userColumns+` FROM users WHERE id = ?`, userID))
+		member, err := userByID(ctx, tx, userID)
 		if err != nil {
 			return err
 		}

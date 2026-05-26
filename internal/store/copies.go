@@ -74,7 +74,11 @@ func (s *Store) CopyByID(ctx context.Context, id int64) (Copy, error) {
 }
 
 func (s *Store) CopyByBarcode(ctx context.Context, barcode string) (Copy, error) {
-	return scanCopy(s.db.QueryRowContext(ctx, `SELECT `+copyColumns+` FROM copies WHERE barcode = ?`, barcode))
+	return copyByBarcode(ctx, s.db, barcode)
+}
+
+func copyByBarcode(ctx context.Context, q querier, barcode string) (Copy, error) {
+	return scanCopy(q.QueryRowContext(ctx, `SELECT `+copyColumns+` FROM copies WHERE barcode = ?`, barcode))
 }
 
 func (s *Store) CopiesForTitle(ctx context.Context, titleID int64) ([]Copy, error) {
