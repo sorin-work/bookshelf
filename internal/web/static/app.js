@@ -21,3 +21,13 @@ document.addEventListener("DOMContentLoaded", () => {
     window.print();
   }
 });
+
+// Forms marked data-confirm ask before submitting. htmx has hx-confirm for
+// its own requests; this covers plain forms.
+document.addEventListener("submit", (event) => {
+  const form = event.target;
+  const question = form.getAttribute && form.getAttribute("data-confirm");
+  if (question && !window.confirm(question)) {
+    event.preventDefault();
+  }
+});

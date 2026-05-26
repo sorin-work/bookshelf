@@ -38,7 +38,7 @@
     <div class="actions">
       <a class="button secondary" href="/titles/{{$t.ID}}/edit">Edit</a>
       {{if not .Data.Copies}}
-      <form method="post" action="/titles/{{$t.ID}}/delete" class="inline">
+      <form method="post" action="/titles/{{$t.ID}}/delete" class="inline" data-confirm="Delete {{$t.Title}} from the catalogue?">
         {{template "csrf" $}}<button type="submit" class="link danger-link">Delete this title</button>
       </form>
       {{end}}
@@ -60,7 +60,7 @@
         <td><a href="/members/{{.UserID}}">{{.MemberName}}</a></td>
         <td>{{date .PlacedAt}}</td>
         <td>{{.Status.Label}}{{if eq .Status "ready"}}: copy {{.Barcode}} until {{.ExpiresOn.Format "2 Jan"}}{{end}}</td>
-        <td class="row-actions"><form method="post" action="/holds/{{.ID}}/cancel" class="inline">{{template "csrf" $}}<button class="link">Cancel</button></form></td>
+        <td class="row-actions"><form method="post" action="/holds/{{.ID}}/cancel" class="inline" data-confirm="Cancel {{.MemberName}}'s hold?">{{template "csrf" $}}<button class="link">Cancel</button></form></td>
       </tr>
     {{end}}
     </tbody>
@@ -95,7 +95,7 @@
         <td class="row-actions">
           {{if eq .Status "available"}}
             <form method="post" action="/copies/{{.ID}}/status" class="inline">{{template "csrf" $}}<input type="hidden" name="status" value="lost"><button class="link">Mark lost</button></form>
-            <form method="post" action="/copies/{{.ID}}/status" class="inline">{{template "csrf" $}}<input type="hidden" name="status" value="withdrawn"><button class="link">Withdraw</button></form>
+            <form method="post" action="/copies/{{.ID}}/status" class="inline" data-confirm="Withdraw copy {{.Barcode}}?">{{template "csrf" $}}<input type="hidden" name="status" value="withdrawn"><button class="link">Withdraw</button></form>
           {{else if or (eq .Status "lost") (eq .Status "withdrawn")}}
             <form method="post" action="/copies/{{.ID}}/status" class="inline">{{template "csrf" $}}<input type="hidden" name="status" value="available"><button class="link">Back on the shelf</button></form>
           {{end}}

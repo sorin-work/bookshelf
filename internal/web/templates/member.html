@@ -76,7 +76,7 @@
         <td class="row-actions">
           {{if eq .Status "open"}}
             <form method="post" action="/fines/{{.ID}}/resolve" class="inline">{{template "csrf" $}}<input type="hidden" name="status" value="paid"><button class="link">Paid</button></form>
-            <form method="post" action="/fines/{{.ID}}/resolve" class="inline">{{template "csrf" $}}<input type="hidden" name="status" value="waived"><button class="link">Waive</button></form>
+            <form method="post" action="/fines/{{.ID}}/resolve" class="inline" data-confirm="Waive this fine?">{{template "csrf" $}}<input type="hidden" name="status" value="waived"><button class="link">Waive</button></form>
           {{end}}
         </td>
       </tr>
@@ -117,7 +117,7 @@
 </section>
 {{end}}
 <section class="danger-zone">
-  <form method="post" action="/members/{{$m.ID}}/active" class="inline">
+  <form method="post" action="/members/{{$m.ID}}/active" class="inline"{{if $m.Active}} data-confirm="Close {{$m.Name}}'s account?"{{end}}>
     {{template "csrf" $}}
     {{if $m.Active}}
       <input type="hidden" name="active" value="0">
