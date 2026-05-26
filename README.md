@@ -59,7 +59,9 @@ directory unless `DB_PATH` says otherwise). Migrations run on start.
 | ------------------ | -------------- | ---------------------------------------------------- |
 | `ADDR`             | `:4409`        | Address to listen on                                 |
 | `DB_PATH`          | `bookshelf.db` | SQLite file                                          |
+| `LIBRARY_NAME`     | `Bookshelf`    | Shown in the header and on printed slips             |
 | `LIBRARY_TIMEZONE` | `UTC`          | Time zone due dates are worked out in                |
+| `ALLOW_SIGNUP`     | `true`         | `false` hides online sign up                         |
 | `SECURE_COOKIES`   | `false`        | Mark cookies Secure; turn on when served over https  |
 | `SESSION_TTL`      | `336h`         | How long a login lasts                               |
 | `SEED_DEMO`        | `false`        | Create the demo accounts and library on first start  |

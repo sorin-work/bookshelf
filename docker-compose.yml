@@ -5,7 +5,9 @@ services:
     build: .
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      LIBRARY_NAME: ${LIBRARY_NAME:-Bookshelf}
       LIBRARY_TIMEZONE: ${LIBRARY_TIMEZONE:-UTC}
+      ALLOW_SIGNUP: ${ALLOW_SIGNUP:-true}
       # Creates demo@example.com / demo-password with sample data on first start.
       SEED_DEMO: ${SEED_DEMO:-true}
       # Leave false for plain http on localhost; set true behind https.
