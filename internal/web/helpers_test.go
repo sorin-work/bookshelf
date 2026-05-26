@@ -46,6 +46,13 @@ func newTestEnv(t *testing.T) *testEnv {
 
 func newTestEnvIn(t *testing.T, loc *time.Location) *testEnv {
 	t.Helper()
+	return newTestEnvWith(t, Options{Location: loc})
+}
+
+// newTestEnvWith starts a server with o on a fresh database. The store,
+// logger, clock and book lookup are filled in by the test environment.
+func newTestEnvWith(t *testing.T, o Options) *testEnv {
+	t.Helper()
 	ctx := context.Background()
 	conn, err := db.Open(ctx, filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
@@ -57,10 +64,14 @@ func newTestEnvIn(t *testing.T, loc *time.Location) *testEnv {
 	}
 
 	env := &testEnv{t: t, store: store.New(conn), now: testNow}
+	o.Store = env.store
+	o.Logger = slog.New(slog.NewTextHandler(io.Discard, nil))
 	app, err := New(Options{
-		Store:    env.store,
-		Logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
-		Location: loc,
+		Store:         o.Store,
+		Logger:        o.Logger,
+		Location:      o.Location,
+		DisableSignup: o.DisableSignup,
+		LibraryName:   o.LibraryName,
 		// Long enough for tests that move the clock forward by months.
 		SessionTTL: testSessionTTL,
 		Now:        func() time.Time { return env.now },

@@ -157,3 +157,15 @@ func TestUnknownPage(t *testing.T) {
 	wantStatus(t, r, http.StatusNotFound)
 	wantBody(t, r, "We couldn&#39;t find that page", "<html")
 }
+
+func TestSignupSwitchedOff(t *testing.T) {
+	env := newTestEnvWith(t, Options{DisableSignup: true, LibraryName: "Mill Street Library"})
+	c := env.client()
+	wantStatus(t, c.get("/signup"), http.StatusNotFound)
+	wantStatus(t, c.signup("Ana", "ana@example.com", "long enough"), http.StatusNotFound)
+	r := c.get("/login")
+	wantBody(t, r, "Ask at the desk", "<title>Log in · Mill Street Library</title>")
+	if contains(r.body, `href="/signup"`) {
+		t.Error("login page links to sign up")
+	}
+}
