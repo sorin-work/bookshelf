@@ -107,12 +107,8 @@ func (s *Server) addCopy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	v, err := s.loadTitleView(r, id)
-	if errors.Is(err, store.ErrNotFound) {
-		s.notFound(w, r)
-		return
-	}
 	if err != nil {
-		s.serverError(w, r, err)
+		s.loadFailed(w, r, err)
 		return
 	}
 	v.CopyForm = f
@@ -133,12 +129,8 @@ func (s *Server) setCopyStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c, err := s.store.CopyByID(r.Context(), id)
-	if errors.Is(err, store.ErrNotFound) {
-		s.notFound(w, r)
-		return
-	}
 	if err != nil {
-		s.serverError(w, r, err)
+		s.loadFailed(w, r, err)
 		return
 	}
 	if err := s.store.SetCopyStatus(r.Context(), id, status); err != nil {
@@ -166,12 +158,8 @@ func (s *Server) updateCopy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c, err := s.store.CopyByID(r.Context(), id)
-	if errors.Is(err, store.ErrNotFound) {
-		s.notFound(w, r)
-		return
-	}
 	if err != nil {
-		s.serverError(w, r, err)
+		s.loadFailed(w, r, err)
 		return
 	}
 	if err := s.store.UpdateCopy(r.Context(), id, shelf, note); err != nil {

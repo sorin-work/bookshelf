@@ -24,12 +24,8 @@ func (s *Server) resolveFine(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f, err := s.store.FineByID(r.Context(), id)
-	if errors.Is(err, store.ErrNotFound) {
-		s.notFound(w, r)
-		return
-	}
 	if err != nil {
-		s.serverError(w, r, err)
+		s.loadFailed(w, r, err)
 		return
 	}
 	err = s.store.ResolveFine(r.Context(), id, status, currentUser(r).ID, s.now())

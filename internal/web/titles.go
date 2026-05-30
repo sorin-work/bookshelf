@@ -228,12 +228,8 @@ func (s *Server) editTitlePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	t, err := s.store.TitleByID(r.Context(), id)
-	if errors.Is(err, store.ErrNotFound) {
-		s.notFound(w, r)
-		return
-	}
 	if err != nil {
-		s.serverError(w, r, err)
+		s.loadFailed(w, r, err)
 		return
 	}
 	s.render(w, r, http.StatusOK, "title_form.html", page{Title: "Edit " + t.Title, Data: titleFormFrom(t)})
@@ -274,12 +270,8 @@ func (s *Server) titlePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	v, err := s.loadTitleView(r, id)
-	if errors.Is(err, store.ErrNotFound) {
-		s.notFound(w, r)
-		return
-	}
 	if err != nil {
-		s.serverError(w, r, err)
+		s.loadFailed(w, r, err)
 		return
 	}
 	s.render(w, r, http.StatusOK, "title.html", page{Title: v.Title.Title, Data: v})
@@ -292,12 +284,8 @@ func (s *Server) deleteTitle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	t, err := s.store.TitleByID(r.Context(), id)
-	if errors.Is(err, store.ErrNotFound) {
-		s.notFound(w, r)
-		return
-	}
 	if err != nil {
-		s.serverError(w, r, err)
+		s.loadFailed(w, r, err)
 		return
 	}
 	err = s.store.DeleteTitle(r.Context(), id)

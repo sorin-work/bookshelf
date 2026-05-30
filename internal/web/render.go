@@ -3,6 +3,7 @@ package web
 import (
 	"bytes"
 	"embed"
+	"errors"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -123,6 +124,16 @@ func (s *Server) execute(w http.ResponseWriter, r *http.Request, status int, nam
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	_, _ = buf.WriteTo(w)
+}
+
+// loadFailed answers a failed lookup: not found for a missing record,
+// a server error for anything else.
+func (s *Server) loadFailed(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, store.ErrNotFound) {
+		s.notFound(w, r)
+		return
+	}
+	s.serverError(w, r, err)
 }
 
 func (s *Server) serverError(w http.ResponseWriter, r *http.Request, err error) {
