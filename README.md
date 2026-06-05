@@ -30,7 +30,9 @@ their own loans.
 - **Lending rules** (loan period, renewals, limits, holds, fines, closing
   days) are edited on the settings page.
 
-The first account created becomes the librarian.
+The first account created becomes the librarian. The rules for due dates,
+renewals, holds and fines are described in
+[docs/lending-rules.md](docs/lending-rules.md).
 
 ## Running it
 
