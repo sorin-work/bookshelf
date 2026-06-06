@@ -194,3 +194,18 @@ func TestDueDateSlip(t *testing.T) {
 	}
 	wantStatus(t, c.member.get(path), http.StatusForbidden)
 }
+
+func TestAccountWarnings(t *testing.T) {
+	c := newCirc(t)
+	c.checkout("C01")
+	if strings.Contains(c.member.get("/account").body, "due soon") {
+		t.Error("a fresh loan is flagged as due soon")
+	}
+	c.env.now = c.env.now.AddDate(0, 0, 19) // due in two days
+	wantBody(t, c.member.get("/account"), `class="due-soon"`, "due soon")
+
+	if err := c.env.store.RenewCard(t.Context(), c.mo.ID, testDate(t, "2026-04-15")); err != nil {
+		t.Fatal(err)
+	}
+	wantBody(t, c.member.get("/account"), "Renew it at the desk soon.")
+}

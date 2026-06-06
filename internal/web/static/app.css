@@ -319,3 +319,4 @@ button.danger-link { color: var(--danger); }
 details.lost { display: inline-block; margin-left: 0.75rem; }
 details.lost summary { cursor: pointer; color: var(--muted); }
 details.lost[open] { display: block; margin-top: 0.4rem; }
+tr.due-soon td:nth-child(3) { font-weight: 600; }

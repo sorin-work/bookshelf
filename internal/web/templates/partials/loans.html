@@ -13,10 +13,10 @@
 
 {{define "loan_row"}}
 {{with .Loan}}
-<tr id="loan-{{.ID}}"{{if .Overdue}} class="overdue"{{end}}>
+<tr id="loan-{{.ID}}"{{if .Overdue}} class="overdue"{{else if .DueSoon}} class="due-soon"{{end}}>
   <td><a href="/titles/{{.TitleID}}">{{.Title}}</a></td>
   <td><code>{{.Barcode}}</code></td>
-  <td>{{.Due.Format "Mon 2 Jan"}}{{if .Overdue}} <span class="badge warn">{{.DaysOverdue}} {{if eq .DaysOverdue 1}}day{{else}}days{{end}} late</span>{{end}}</td>
+  <td>{{.Due.Format "Mon 2 Jan"}}{{if .Overdue}} <span class="badge warn">{{.DaysOverdue}} {{if eq .DaysOverdue 1}}day{{else}}days{{end}} late</span>{{else if .DueSoon}} <span class="badge">due soon</span>{{end}}</td>
   <td>{{.Renewals}}</td>
   <td class="row-actions">
     {{with .Notice}}<span class="notice">{{.}}</span>{{end}}

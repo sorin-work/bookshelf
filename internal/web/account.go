@@ -8,12 +8,14 @@ import (
 
 type accountPage struct {
 	CardExpired bool
-	Loans       []loanLine
-	Holds       []store.HoldRow
-	History     []store.LoanRow
-	Fines       []store.Fine
-	Owed        int
-	Currency    string
+	// CardExpiresSoon is set in the month before the card runs out.
+	CardExpiresSoon bool
+	Loans           []loanLine
+	Holds           []store.HoldRow
+	History         []store.LoanRow
+	Fines           []store.Fine
+	Owed            int
+	Currency        string
 }
 
 // account is the member's own page: their card, what they have out and
@@ -21,6 +23,7 @@ type accountPage struct {
 func (s *Server) account(w http.ResponseWriter, r *http.Request) {
 	u := currentUser(r)
 	d := accountPage{CardExpired: u.CardExpired(s.today())}
+	d.CardExpiresSoon = !d.CardExpired && !u.CardExpires.IsZero() && u.CardExpires.Before(s.today().AddDays(31))
 	active, err := s.store.ActiveLoans(r.Context(), u.ID)
 	if err != nil {
 		s.serverError(w, r, err)

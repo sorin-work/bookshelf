@@ -15,8 +15,10 @@ type loanLine struct {
 	store.LoanRow
 	Overdue     bool
 	DaysOverdue int
-	CanRenew    bool
-	WhyNot      string
+	// DueSoon is set for loans due in the next three days.
+	DueSoon  bool
+	CanRenew bool
+	WhyNot   string
 	// Notice is a one-off message shown in the row after an htmx renewal.
 	Notice string
 }
@@ -34,6 +36,7 @@ func (s *Server) loanLines(r *http.Request, loans []store.LoanRow) ([]loanLine, 
 			Overdue:     l.Rules().Overdue(today),
 			DaysOverdue: l.Rules().DaysOverdue(today),
 		}
+		line.DueSoon = !line.Overdue && !l.Due.After(today.AddDays(3))
 		if err := policy.CanRenew(l.Rules(), today); err != nil {
 			line.WhyNot = renewalMessage(err)
 		} else {

@@ -5,7 +5,7 @@
     <p class="muted">Library card</p>
     <p class="card-number">{{.User.FormattedCard}}</p>
     <p>{{if .Data.CardExpired}}<span class="badge warn">Expired {{.User.CardExpires.Format "2 Jan 2006"}}</span> Ask at the desk to renew it.
-       {{else}}Valid until {{.User.CardExpires.Format "2 Jan 2006"}}{{end}}</p>
+       {{else}}Valid until {{.User.CardExpires.Format "2 Jan 2006"}}{{if .Data.CardExpiresSoon}}. Renew it at the desk soon.{{end}}{{end}}</p>
   </section>
   <section class="card">
     <p class="big-number">{{len .Data.Loans}}</p>
