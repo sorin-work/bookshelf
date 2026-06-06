@@ -110,7 +110,7 @@
     <thead><tr><th>Title</th><th>Borrowed</th><th>Returned</th></tr></thead>
     <tbody>
     {{range .Data.History}}
-      <tr><td><a href="/titles/{{.TitleID}}">{{.Title}}</a></td><td>{{date .CheckedOutAt}}</td><td>{{date .ReturnedAt}}</td></tr>
+      <tr><td><a href="/titles/{{.TitleID}}">{{.Title}}</a></td><td>{{date .CheckedOutAt}}</td><td>{{if .Lost}}Reported lost {{end}}{{date .ReturnedAt}}</td></tr>
     {{end}}
     </tbody>
   </table>

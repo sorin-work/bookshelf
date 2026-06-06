@@ -2,7 +2,9 @@ package web
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/sorin-work/bookshelf/internal/domain"
 	"github.com/sorin-work/bookshelf/internal/store"
@@ -112,4 +114,34 @@ func (s *Server) renewLoan(w http.ResponseWriter, r *http.Request) {
 	}
 	s.setFlash(w, renewed.Title+" renewed. It's now due "+renewed.Due.Format("Monday 2 January")+".")
 	http.Redirect(w, r, back, http.StatusSeeOther)
+}
+
+// declareLost ends a loan whose book the member has lost, with an optional
+// replacement charge.
+func (s *Server) declareLost(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(r)
+	if !ok {
+		s.notFound(w, r)
+		return
+	}
+	charge := 0
+	if v := strings.TrimSpace(r.PostFormValue("charge")); v != "" {
+		var err error
+		if charge, err = domain.ParseMoney(v); err != nil {
+			http.Error(w, "Enter the replacement charge as a number, like 12.50, or leave it empty.", http.StatusUnprocessableEntity)
+			return
+		}
+	}
+	l, err := s.store.DeclareLost(r.Context(), id, charge, s.now())
+	if errors.Is(err, store.ErrNotOnLoan) {
+		http.Error(w, "This loan has already ended.", http.StatusConflict)
+		return
+	}
+	if err != nil {
+		s.loadFailed(w, r, err)
+		return
+	}
+	s.log.Info("loan declared lost", "loan_id", id, "charge", charge, "by", currentUser(r).ID)
+	s.setFlash(w, l.Title+" ("+l.Barcode+") is marked lost.")
+	http.Redirect(w, r, fmt.Sprintf("/members/%d", l.UserID), http.StatusSeeOther)
 }

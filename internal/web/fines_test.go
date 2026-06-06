@@ -94,3 +94,18 @@ func TestReminderURL(t *testing.T) {
 		}
 	}
 }
+
+func TestDeclareLostAtTheDesk(t *testing.T) {
+	c := newCirc(t)
+	c.checkout("C01")
+	loans, _ := c.env.store.ActiveLoans(t.Context(), c.mo.ID)
+	path := "/loans/" + itoa(loans[0].ID) + "/lost"
+	member := "/members/" + itoa(c.mo.ID)
+
+	wantStatus(t, c.member.post(path, nil), http.StatusForbidden)
+	wantStatus(t, c.lib.post(path, titleValues("charge", "twelve")), http.StatusUnprocessableEntity)
+	wantRedirect(t, c.lib.post(path, titleValues("charge", "12.50")), member)
+	wantBody(t, c.lib.get(member), "is marked lost", "Replacement for lost copy C01", "€12.50", "Reported lost")
+	wantStatus(t, c.lib.post(path, nil), http.StatusConflict)
+	wantBody(t, c.lib.get(c.title), "1 of 1 on the shelf")
+}

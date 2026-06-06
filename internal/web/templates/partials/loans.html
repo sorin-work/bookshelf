@@ -26,6 +26,16 @@
         {{template "csrf" $.Page}}<button type="submit" class="link">Renew</button>
       </form>
     {{else}}<span class="muted">{{.WhyNot}}</span>{{end}}
+    {{if and $.Page.User $.Page.User.IsLibrarian}}
+      <details class="lost">
+        <summary>Lost</summary>
+        <form method="post" action="/loans/{{.ID}}/lost" class="inline-form" data-confirm="Mark {{.Title}} as lost?">
+          {{template "csrf" $.Page}}
+          <input name="charge" inputmode="decimal" placeholder="Replacement charge" aria-label="Replacement charge">
+          <button type="submit" class="secondary">Mark lost</button>
+        </form>
+      </details>
+    {{end}}
   </td>
 </tr>
 {{end}}

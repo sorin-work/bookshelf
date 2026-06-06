@@ -222,3 +222,30 @@ func TestLateReturnChargesFine(t *testing.T) {
 		t.Errorf("on time return: %d, %v", res.Fine, err)
 	}
 }
+
+func TestDeclareLost(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	l, err := f.checkout(t, "B1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	lost, err := f.s.DeclareLost(ctx, l.ID, 1250, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !lost.Lost || !lost.Returned() {
+		t.Errorf("loan %+v", lost)
+	}
+	c, _ := f.s.CopyByBarcode(ctx, "B1")
+	if c.Status != domain.CopyLost {
+		t.Errorf("copy status %s", c.Status)
+	}
+	owed, _ := f.s.FinesOwed(ctx, f.member.ID)
+	if owed != 1250 {
+		t.Errorf("owed %d", owed)
+	}
+	if _, err := f.s.DeclareLost(ctx, l.ID, 0, now); !errors.Is(err, ErrNotOnLoan) {
+		t.Errorf("declared lost twice: %v", err)
+	}
+}

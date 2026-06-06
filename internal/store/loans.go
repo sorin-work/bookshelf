@@ -40,6 +40,8 @@ type LoanRow struct {
 	// blocks renewals. Holds that already have a copy set aside do not.
 	HoldsWaiting int
 	CardExpires  domain.Date
+	// Lost is set when the loan ended with the book reported lost.
+	Lost bool
 }
 
 func (l LoanRow) Rules() domain.Loan {
@@ -51,7 +53,7 @@ func (l LoanRow) Returned() bool { return !l.ReturnedAt.IsZero() }
 const loanSelect = `SELECT l.id, l.copy_id, c.barcode, t.id, t.title, u.id, u.name, u.email, u.phone,
 	coalesce(u.card_number, ''), l.checked_out_at, l.due_on, l.renewals, coalesce(l.returned_at, ''),
 	(SELECT count(*) FROM holds h WHERE h.title_id = t.id AND h.status = 'waiting'),
-	coalesce(u.card_expires, '')
+	coalesce(u.card_expires, ''), l.lost
 	FROM loans l
 	JOIN copies c ON c.id = l.copy_id
 	JOIN titles t ON t.id = c.title_id
@@ -61,7 +63,7 @@ func scanLoan(row interface{ Scan(...any) error }) (LoanRow, error) {
 	var l LoanRow
 	var out, due, returned, cardExpires string
 	err := row.Scan(&l.ID, &l.CopyID, &l.Barcode, &l.TitleID, &l.Title, &l.UserID, &l.MemberName,
-		&l.MemberEmail, &l.MemberPhone, &l.CardNumber, &out, &due, &l.Renewals, &returned, &l.HoldsWaiting, &cardExpires)
+		&l.MemberEmail, &l.MemberPhone, &l.CardNumber, &out, &due, &l.Renewals, &returned, &l.HoldsWaiting, &cardExpires, &l.Lost)
 	if errors.Is(err, sql.ErrNoRows) {
 		return LoanRow{}, ErrNotFound
 	}
@@ -286,6 +288,39 @@ func (s *Store) Renew(ctx context.Context, loanID int64, today domain.Date) (Loa
 		}
 		_, err = tx.ExecContext(ctx, `UPDATE loans SET due_on = ?, renewals = renewals + 1 WHERE id = ?`,
 			policy.RenewedDue(l.Rules(), today).String(), loanID)
+		return err
+	})
+	if err != nil {
+		return LoanRow{}, err
+	}
+	return s.LoanByID(ctx, loanID)
+}
+
+// DeclareLost ends a loan because the member lost the book. The copy is
+// marked lost and, if charge is more than zero, a replacement charge is
+// added to the member's account.
+func (s *Store) DeclareLost(ctx context.Context, loanID int64, charge int, now time.Time) (LoanRow, error) {
+	err := s.inTx(ctx, func(tx *sql.Tx) error {
+		var copyID, userID int64
+		var barcode string
+		err := tx.QueryRowContext(ctx, `SELECT l.copy_id, l.user_id, c.barcode FROM loans l
+			JOIN copies c ON c.id = l.copy_id WHERE l.id = ? AND l.returned_at IS NULL`, loanID).Scan(&copyID, &userID, &barcode)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotOnLoan
+		}
+		if err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE loans SET returned_at = ?, lost = 1 WHERE id = ?`, fmtTime(now), loanID); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE copies SET status = 'lost' WHERE id = ?`, copyID); err != nil {
+			return err
+		}
+		if charge > 0 {
+			_, err = tx.ExecContext(ctx, `INSERT INTO fines (user_id, loan_id, kind, amount_cents, note, created_at)
+				VALUES (?, ?, 'charge', ?, ?, ?)`, userID, loanID, charge, "Replacement for lost copy "+barcode, fmtTime(now))
+		}
 		return err
 	})
 	if err != nil {

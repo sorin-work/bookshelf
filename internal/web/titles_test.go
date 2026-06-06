@@ -124,7 +124,7 @@ func TestCopies(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantRedirect(t, lib.post("/copies/"+itoa(c.ID)+"/status", titleValues("status", "lost")), loc+"#copies")
-	wantBody(t, lib.get(loc), "1 of 2 on the shelf", "Lost")
+	wantBody(t, lib.get(loc), "1 of 1 on the shelf", "Lost")
 	wantBody(t, lib.get("/catalogue"), "1 available")
 }
 

@@ -9,7 +9,7 @@
     {{with $t.Subtitle}}<p class="subtitle">{{.}}</p>{{end}}
     {{if $t.Authors}}<p>by {{range $i, $a := $t.Authors}}{{if $i}}, {{end}}<a href="/catalogue?author={{$a}}">{{$a}}</a>{{end}}</p>{{end}}
     <p class="availability">
-      {{if .Data.Available}}<span class="badge ok">{{.Data.Available}} of {{len .Data.Copies}} on the shelf</span>
+      {{if .Data.Available}}<span class="badge ok">{{.Data.Available}} of {{.Data.Circulating}} on the shelf</span>
       {{else if .Data.Copies}}<span class="badge warn">All copies are out</span>
       {{else}}<span class="badge">No copies yet</span>{{end}}
       {{with .Data.Waiting}}<span class="muted">{{.}} waiting</span>{{end}}
