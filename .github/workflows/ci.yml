@@ -20,6 +20,27 @@ jobs:
         with:
           version: v2.6
 
+      - name: go.mod is tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
       - run: go vet ./...
       - run: go test -race ./...
       - run: go build ./cmd/bookshelf
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build -t bookshelf:ci .
+      - name: Start it and check health
+        run: |
+          docker run -d --name bookshelf -p 4409:4409 -e SEED_DEMO=true bookshelf:ci
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:4409/healthz && exit 0
+            sleep 1
+          done
+          docker logs bookshelf
+          exit 1
