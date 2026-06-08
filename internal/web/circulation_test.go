@@ -209,3 +209,16 @@ func TestAccountWarnings(t *testing.T) {
 	}
 	wantBody(t, c.member.get("/account"), "Renew it at the desk soon.")
 }
+
+func TestReadingHistory(t *testing.T) {
+	c := newCirc(t)
+	wantBody(t, c.member.get("/account/history"), "Nothing yet.")
+	c.checkout("C01")
+	c.lib.post("/desk/return", titleValues("barcode", "C01"))
+	c.checkout("C02")
+	r := c.member.get("/account/history")
+	wantBody(t, r, "1 book borrowed and returned.", "Dune")
+	if strings.Contains(r.body, "Older →") {
+		t.Error("pager on a single page")
+	}
+}

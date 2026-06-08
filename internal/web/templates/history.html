@@ -1,0 +1,24 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="page-head">
+  <h1>Reading history</h1>
+  <a href="/account">Back to my account</a>
+</div>
+{{if $d.Loans}}
+<p class="muted">{{$d.Total}} {{if eq $d.Total 1}}book{{else}}books{{end}} borrowed and returned.</p>
+<table class="table">
+  <thead><tr><th>Title</th><th>Borrowed</th><th>Returned</th></tr></thead>
+  <tbody>
+  {{range $d.Loans}}
+    <tr><td><a href="/titles/{{.TitleID}}">{{.Title}}</a></td><td>{{date .CheckedOutAt}}</td><td>{{if .Lost}}Reported lost {{end}}{{date .ReturnedAt}}</td></tr>
+  {{end}}
+  </tbody>
+</table>
+<nav class="pager" aria-label="Pages">
+  {{with $d.PrevURL}}<a href="{{.}}">← Newer</a>{{end}}
+  {{with $d.NextURL}}<a href="{{.}}">Older →</a>{{end}}
+</nav>
+{{else}}
+<p class="empty">Nothing yet. Books you return show up here.</p>
+{{end}}
+{{end}}

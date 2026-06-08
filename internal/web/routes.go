@@ -32,6 +32,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /logout", s.logout)
 
 	mux.HandleFunc("GET /account", s.requireUser(s.account))
+	mux.HandleFunc("GET /account/history", s.requireUser(s.history))
 	mux.HandleFunc("GET /account/password", s.requireUser(s.passwordPage))
 	mux.HandleFunc("POST /account/password", s.requireUser(s.changePassword))
 	mux.HandleFunc("GET /catalogue", s.catalogue)

@@ -107,8 +107,21 @@ func (s *Store) ActiveLoans(ctx context.Context, userID int64) ([]LoanRow, error
 
 // LoanHistory returns a member's returned loans, most recent first.
 func (s *Store) LoanHistory(ctx context.Context, userID int64, limit int) ([]LoanRow, error) {
-	return queryLoans(ctx, s.db, `WHERE l.user_id = ? AND l.returned_at IS NOT NULL
-		ORDER BY l.returned_at DESC LIMIT ?`, userID, limit)
+	loans, _, err := s.LoanHistoryPage(ctx, userID, limit, 0)
+	return loans, err
+}
+
+// LoanHistoryPage returns one page of a member's returned loans and how
+// many there are in all.
+func (s *Store) LoanHistoryPage(ctx context.Context, userID int64, limit, offset int) ([]LoanRow, int, error) {
+	var total int
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM loans WHERE user_id = ? AND returned_at IS NOT NULL`,
+		userID).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	loans, err := queryLoans(ctx, s.db, `WHERE l.user_id = ? AND l.returned_at IS NOT NULL
+		ORDER BY l.returned_at DESC, l.id DESC LIMIT ? OFFSET ?`, userID, limit, offset)
+	return loans, total, err
 }
 
 // DueBetween lists open loans due from first to last inclusive.
