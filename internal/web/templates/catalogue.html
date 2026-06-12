@@ -20,6 +20,7 @@
       {{with $d.Query.Author}}<input type="hidden" name="author" value="{{.}}">{{end}}
       <label class="check"><input id="available" type="checkbox" name="available" value="1"{{if $d.Query.Available}} checked{{end}}> On the shelf now</label>
       <button type="submit">Search</button>
+      <span class="spinner htmx-indicator" aria-hidden="true"></span>
     </form>
     {{if or $d.Query.Subject $d.Query.Author}}
     <p class="filters">

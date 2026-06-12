@@ -31,3 +31,20 @@ document.addEventListener("submit", (event) => {
     event.preventDefault();
   }
 });
+
+// Press / anywhere (outside a text field) to jump to the search box.
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) {
+    return;
+  }
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+    return;
+  }
+  const search = document.querySelector("input[type=search]");
+  if (search) {
+    event.preventDefault();
+    search.focus();
+    search.select();
+  }
+});

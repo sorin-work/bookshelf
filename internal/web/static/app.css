@@ -428,3 +428,17 @@ tr.due-soon td:nth-child(3) { font-weight: 600; }
 .bar-100 { width: 100%; }
 
 code { white-space: nowrap; font-size: 0.92em; }
+
+/* htmx adds .htmx-request to the form while a search is in flight. */
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  align-self: center;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  opacity: 0;
+}
+.htmx-request .spinner, .spinner.htmx-request { opacity: 1; }
+@keyframes spin { to { transform: rotate(360deg); } }
