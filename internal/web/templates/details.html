@@ -1,0 +1,25 @@
+{{define "content"}}
+{{$f := .Data}}
+<div class="narrow">
+  <h1>Your details</h1>
+  <form method="post" action="/account/details" class="card" novalidate>
+    {{template "csrf" .}}
+    <div class="field">
+      <label for="name">Name</label>
+      <input id="name" name="name" value="{{$f.Name}}" autocomplete="name" required>
+      {{template "field_error" index $f.Errors "name"}}
+    </div>
+    <div class="field">
+      <label for="phone">Phone</label>
+      <input id="phone" name="phone" type="tel" value="{{$f.Phone}}" autocomplete="tel">
+      <p class="hint">So the library can call when a hold is ready or a book is overdue.</p>
+      {{template "field_error" index $f.Errors "phone"}}
+    </div>
+    <p class="hint">To change your email address, ask at the desk.</p>
+    <div class="actions">
+      <button type="submit">Save</button>
+      <a class="button secondary" href="/account">Cancel</a>
+    </div>
+  </form>
+</div>
+{{end}}

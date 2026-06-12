@@ -146,3 +146,16 @@ func (s *Store) SetActive(ctx context.Context, id int64, active bool, today doma
 		return err
 	})
 }
+
+// UpdateContact changes the details a member may edit themselves.
+func (s *Store) UpdateContact(ctx context.Context, id int64, name, phone string) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE users SET name = ?, phone = ? WHERE id = ?`,
+		strings.TrimSpace(name), strings.TrimSpace(phone), id)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

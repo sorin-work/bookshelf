@@ -46,3 +46,12 @@ func TestLibrarianSetsMemberPassword(t *testing.T) {
 	wantRedirect(t, lib.post(r.location+"/password", titleValues("password", "given at the desk")), r.location)
 	wantRedirect(t, env.client().login("desk@example.com", "given at the desk"), "/")
 }
+
+func TestUpdateOwnDetails(t *testing.T) {
+	env := newTestEnv(t)
+	c := env.client()
+	c.signup("Ana", "ana@example.com", "long enough")
+	wantStatus(t, c.post("/account/details", titleValues("name", "", "phone", "1")), http.StatusUnprocessableEntity)
+	wantRedirect(t, c.post("/account/details", titleValues("name", "Ana Pop", "phone", "0722 111 222")), "/account")
+	wantBody(t, c.get("/account/details"), `value="Ana Pop"`, `value="0722 111 222"`)
+}

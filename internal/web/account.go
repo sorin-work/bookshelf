@@ -3,6 +3,8 @@ package web
 import (
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/sorin-work/bookshelf/internal/store"
 )
@@ -88,4 +90,44 @@ func (s *Server) history(w http.ResponseWriter, r *http.Request) {
 		d.NextURL = "/account/history?page=" + strconv.Itoa(pageNum+1)
 	}
 	s.render(w, r, http.StatusOK, "history.html", page{Title: "Reading history", Data: d})
+}
+
+type detailsForm struct {
+	Name   string
+	Phone  string
+	Errors formErrors
+}
+
+func (s *Server) detailsPage(w http.ResponseWriter, r *http.Request) {
+	u := currentUser(r)
+	s.render(w, r, http.StatusOK, "details.html", page{Title: "Your details", Data: detailsForm{Name: u.Name, Phone: u.Phone}})
+}
+
+// updateDetails lets members fix their name and phone number. The email
+// is their login and their card is the library's, so those stay with the
+// desk.
+func (s *Server) updateDetails(w http.ResponseWriter, r *http.Request) {
+	f := detailsForm{
+		Name:   strings.TrimSpace(r.PostFormValue("name")),
+		Phone:  strings.TrimSpace(r.PostFormValue("phone")),
+		Errors: formErrors{},
+	}
+	if f.Name == "" {
+		f.Errors["name"] = "Tell us your name."
+	} else if utf8.RuneCountInString(f.Name) > 100 {
+		f.Errors["name"] = "Keep it under 100 characters."
+	}
+	if utf8.RuneCountInString(f.Phone) > 30 {
+		f.Errors["phone"] = "That phone number is too long."
+	}
+	if f.Errors.any() {
+		s.render(w, r, http.StatusUnprocessableEntity, "details.html", page{Title: "Your details", Data: f})
+		return
+	}
+	if err := s.store.UpdateContact(r.Context(), currentUser(r).ID, f.Name, f.Phone); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	s.setFlash(w, "Saved your details.")
+	http.Redirect(w, r, "/account", http.StatusSeeOther)
 }
