@@ -41,6 +41,7 @@ func TestHoldFlow(t *testing.T) {
 	wantBody(t, r, "on the hold shelf for another member")
 
 	anaUser, _ := c.env.store.UserByEmail(t.Context(), "ana@example.com")
+	wantBody(t, c.lib.get("/members/"+itoa(anaUser.ID)), "Ready: copy C02")
 	r = c.lib.post("/desk/checkout", titleValues("card", anaUser.CardNumber, "barcode", "C02"))
 	wantStatus(t, r, http.StatusOK)
 	wantBody(t, ana.get("/account"), "No holds.")

@@ -57,6 +57,25 @@
   {{template "loan_table" args "Page" $ "Loans" .Data.Loans "Empty" "Nothing on loan right now."}}
 </section>
 
+{{if .Data.Holds}}
+<section id="holds">
+  <h2>Holds</h2>
+  <table class="table">
+    <thead><tr><th>Title</th><th>Status</th><th>Placed</th><th></th></tr></thead>
+    <tbody>
+    {{range .Data.Holds}}
+      <tr>
+        <td><a href="/titles/{{.TitleID}}">{{.Title}}</a></td>
+        <td>{{if eq .Status "ready"}}<span class="badge ok">Ready: copy {{.Barcode}} until {{.ExpiresOn.Format "2 Jan"}}</span>{{else}}Number {{.Position}} in the queue{{end}}</td>
+        <td>{{date .PlacedAt}}</td>
+        <td class="row-actions"><form method="post" action="/holds/{{.ID}}/cancel" class="inline" data-confirm="Cancel this hold?">{{template "csrf" $}}<button class="link">Cancel</button></form></td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{end}}
+
 <section id="fines">
   <h2>Fines</h2>
   <p>

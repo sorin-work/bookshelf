@@ -157,6 +157,7 @@ type memberView struct {
 	Member      store.User
 	CardExpired bool
 	Loans       []loanLine
+	Holds       []store.HoldRow
 	History     []store.LoanRow
 	Fines       []store.Fine
 	Owed        int
@@ -176,6 +177,10 @@ func (s *Server) memberPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if v.Loans, err = s.loanLines(r, active); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	if v.Holds, err = s.store.OpenHolds(r.Context(), m.ID); err != nil {
 		s.serverError(w, r, err)
 		return
 	}
