@@ -54,6 +54,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /overdue", s.requireLibrarian(s.overdue))
 	mux.HandleFunc("GET /overdue.csv", s.requireLibrarian(s.overdueCSV))
 	mux.HandleFunc("GET /dashboard", s.requireLibrarian(s.dashboard))
+	mux.HandleFunc("GET /report", s.requireLibrarian(s.report))
 
 	mux.HandleFunc("GET /desk", s.requireLibrarian(s.desk))
 	mux.HandleFunc("GET /desk/member", s.requireLibrarian(s.deskMember))

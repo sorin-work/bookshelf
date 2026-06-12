@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sorin-work/bookshelf/internal/domain"
@@ -106,6 +107,42 @@ func (s *Store) RecentActivity(ctx context.Context, limit int) ([]Activity, erro
 		}
 		a.At = parseTime(at)
 		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+// MonthCount is circulation in one calendar month.
+type MonthCount struct {
+	Month     string // 2026-03
+	Checkouts int
+	Returns   int
+	NewUsers  int
+}
+
+// MonthlyCirculation counts checkouts, returns and new members per month
+// for the months from first to last (inclusive, as "2006-01"). Months are
+// worked out from UTC timestamps shifted by offset, which is close enough
+// for a monthly report.
+func (s *Store) MonthlyCirculation(ctx context.Context, first, last string, offset time.Duration) ([]MonthCount, error) {
+	mod := fmt.Sprintf("%+d seconds", int(offset.Seconds()))
+	rows, err := s.db.QueryContext(ctx, `SELECT month, sum(c), sum(r), sum(n) FROM (
+		SELECT strftime('%Y-%m', checked_out_at, ?1) AS month, 1 AS c, 0 AS r, 0 AS n FROM loans
+		UNION ALL
+		SELECT strftime('%Y-%m', returned_at, ?1), 0, 1, 0 FROM loans WHERE returned_at IS NOT NULL
+		UNION ALL
+		SELECT strftime('%Y-%m', created_at, ?1), 0, 0, 1 FROM users WHERE role = 'member'
+	) WHERE month BETWEEN ?2 AND ?3 GROUP BY month ORDER BY month`, mod, first, last)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []MonthCount
+	for rows.Next() {
+		var m MonthCount
+		if err := rows.Scan(&m.Month, &m.Checkouts, &m.Returns, &m.NewUsers); err != nil {
+			return nil, err
+		}
+		out = append(out, m)
 	}
 	return out, rows.Err()
 }

@@ -1,0 +1,24 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="page-head">
+  <h1>The last twelve months</h1>
+  <a href="/dashboard">Back to the dashboard</a>
+</div>
+<table class="table report">
+  <thead><tr><th>Month</th><th>Checkouts</th><th class="bar-cell"></th><th>Returns</th><th>New members</th></tr></thead>
+  <tbody>
+  {{range $d.Months}}
+    <tr>
+      <td>{{.Label}}</td>
+      <td>{{.Checkouts}}</td>
+      <td class="bar-cell"><span class="bar bar-{{.Bar}}" aria-hidden="true"></span></td>
+      <td>{{.Returns}}</td>
+      <td>{{.NewUsers}}</td>
+    </tr>
+  {{end}}
+  </tbody>
+  <tfoot>
+    <tr><th>Total</th><th>{{$d.Total.Checkouts}}</th><th></th><th>{{$d.Total.Returns}}</th><th>{{$d.Total.NewUsers}}</th></tr>
+  </tfoot>
+</table>
+{{end}}

@@ -41,3 +41,21 @@ func TestTimesShownInLibraryTimeZone(t *testing.T) {
 	wantBody(t, c.lib.get("/dashboard"), "11 Mar 00:30")
 	wantBody(t, c.lib.get("/members/"+itoa(c.mo.ID)), "<dd>10 Mar 2026</dd>")
 }
+
+func TestMonthlyReport(t *testing.T) {
+	c := newCirc(t)
+	c.checkout("C01")
+	c.env.now = c.env.now.AddDate(0, 1, 0)
+	c.lib.post("/desk/return", titleValues("barcode", "C01"))
+	c.checkout("C02")
+
+	r := c.lib.get("/report")
+	wantStatus(t, r, http.StatusOK)
+	wantBody(t, r,
+		"<td>Mar 2026</td>\n      <td>1</td>",
+		"<td>Apr 2026</td>\n      <td>1</td>",
+		"<td>May 2025</td>",
+		"<tr><th>Total</th><th>2</th><th></th><th>1</th><th>1</th></tr>",
+	)
+	wantStatus(t, c.member.get("/report"), http.StatusForbidden)
+}
