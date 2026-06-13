@@ -206,3 +206,33 @@ func TestListTitlesFilters(t *testing.T) {
 		t.Errorf("subjects %+v", subjects)
 	}
 }
+
+func TestDeleteTitle(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	gone, _ := s.CreateTitle(ctx, TitleInput{Title: "Typo", Authors: []string{"Only Here"}, Subjects: []string{"Oddities"}}, now)
+	kept, _ := s.CreateTitle(ctx, TitleInput{Title: "Kept", Authors: []string{"Stays"}}, now)
+	if _, err := s.CreateCopy(ctx, kept, CopyInput{Barcode: "K-1"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteTitle(ctx, kept); !errors.Is(err, ErrTitleInUse) {
+		t.Errorf("title with copies: %v", err)
+	}
+	if err := s.DeleteTitle(ctx, gone); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteTitle(ctx, gone); !errors.Is(err, ErrNotFound) {
+		t.Errorf("delete twice: %v", err)
+	}
+	subjects, _ := s.Subjects(ctx)
+	if len(subjects) != 0 {
+		t.Errorf("orphan subjects kept: %+v", subjects)
+	}
+	var authors int
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM authors`).Scan(&authors); err != nil {
+		t.Fatal(err)
+	}
+	if authors != 1 {
+		t.Errorf("%d authors left, want 1", authors)
+	}
+}
