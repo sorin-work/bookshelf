@@ -42,8 +42,17 @@ func NormalizeISBN(s string) (string, error) {
 }
 
 func stripISBN(s string) string {
+	s = strings.TrimSpace(s)
+	// Pasted from a book's imprint page: "ISBN 978-...", "ISBN-13: 978-...".
+	upper := strings.ToUpper(s)
+	for _, prefix := range []string{"ISBN-13:", "ISBN-10:", "ISBN13:", "ISBN10:", "ISBN:", "ISBN"} {
+		if strings.HasPrefix(upper, prefix) {
+			s = s[len(prefix):]
+			break
+		}
+	}
 	var b strings.Builder
-	for _, r := range strings.TrimSpace(s) {
+	for _, r := range s {
 		switch r {
 		case '-', ' ':
 			continue
