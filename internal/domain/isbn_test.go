@@ -23,6 +23,8 @@ func TestNormalizeISBN(t *testing.T) {
 		{"pasted with a prefix", "ISBN 978-0-306-40615-7", "9780306406157", nil},
 		{"pasted with an isbn-13 label", "isbn-13: 9780306406157", "9780306406157", nil},
 		{"pasted with an isbn-10 label", "ISBN-10: 0306406152", "9780306406157", nil},
+		{"en dashes from a web page", "978\u20130\u2013306\u201340615\u20137", "9780306406157", nil},
+		{"non-breaking spaces", "978\u00a00306406157", "9780306406157", nil},
 		{"isbn-13 bad checksum", "9780306406158", "", ErrISBNChecksum},
 		{"isbn-10 bad checksum", "0306406153", "", ErrISBNChecksum},
 		{"isbn-13 bad prefix", "1230306406157", "", ErrISBNPrefix},

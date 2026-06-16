@@ -54,7 +54,9 @@ func stripISBN(s string) string {
 	var b strings.Builder
 	for _, r := range s {
 		switch r {
-		case '-', ' ':
+		case '-', ' ', '\u2010', '\u2011', '\u2012', '\u2013', '\u2014', '\u2212', '\u00a0':
+			// Hyphens, en and em dashes, minus signs and non-breaking
+			// spaces all turn up in ISBNs copied from web pages.
 			continue
 		case 'x':
 			// Typed by hand the check digit is often lower case.
