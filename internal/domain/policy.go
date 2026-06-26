@@ -18,6 +18,8 @@ type Policy struct {
 	// ClosedDays are the weekdays the library is closed. Nothing falls due
 	// on a closed day.
 	ClosedDays []time.Weekday
+	// ClosedDates are one-off closures: bank holidays, the summer break.
+	ClosedDates []Date
 	// HoldPickupDays is how long a copy waits on the hold shelf.
 	HoldPickupDays int
 	// MaxHolds is how many holds one member can have at once.
@@ -36,6 +38,9 @@ type Policy struct {
 	// Currency is printed in front of amounts.
 	Currency string
 }
+
+// MaxClosedDates keeps the list of one-off closures manageable.
+const MaxClosedDates = 60
 
 func DefaultPolicy() Policy {
 	return Policy{
@@ -91,6 +96,9 @@ func (p Policy) Validate() error {
 	for _, d := range p.ClosedDays {
 		closed[d] = true
 	}
+	if len(p.ClosedDates) > MaxClosedDates {
+		errs = append(errs, fmt.Errorf("list at most %d closure dates", MaxClosedDates))
+	}
 	if len(closed) >= 7 {
 		errs = append(errs, fmt.Errorf("the library has to be open at least one day a week"))
 	}
@@ -99,6 +107,11 @@ func (p Policy) Validate() error {
 
 // IsOpen reports whether the library is open on d.
 func (p Policy) IsOpen(d Date) bool {
+	for _, c := range p.ClosedDates {
+		if c == d {
+			return false
+		}
+	}
 	wd := d.Weekday()
 	for _, c := range p.ClosedDays {
 		if c == wd {
@@ -116,9 +129,9 @@ func (p Policy) DueDate(from Date) Date {
 
 // nextOpenDay returns d, or the first day after it the library is open.
 func (p Policy) nextOpenDay(d Date) Date {
-	// Validate guarantees one open day a week; the bound only protects
-	// against a policy that skipped validation.
-	for i := 0; i < 7 && !p.IsOpen(d); i++ {
+	// Validate guarantees one open day a week and caps the closure dates;
+	// the bound only protects against a policy that skipped validation.
+	for i := 0; i < 7+len(p.ClosedDates) && !p.IsOpen(d); i++ {
 		d = d.AddDays(1)
 	}
 	return d

@@ -66,3 +66,20 @@ func (d Date) After(o Date) bool { return d.Time().After(o.Time()) }
 func (d Date) DaysUntil(o Date) int {
 	return int(o.Time().Sub(d.Time()).Hours() / 24)
 }
+
+// MarshalText and UnmarshalText store a Date as 2006-01-02, which is how
+// it appears in the saved lending policy.
+func (d Date) MarshalText() ([]byte, error) { return []byte(d.String()), nil }
+
+func (d *Date) UnmarshalText(b []byte) error {
+	if len(b) == 0 {
+		*d = Date{}
+		return nil
+	}
+	parsed, err := ParseDate(string(b))
+	if err != nil {
+		return err
+	}
+	*d = parsed
+	return nil
+}

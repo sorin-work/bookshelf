@@ -50,3 +50,18 @@ func TestDateOfUsesLocation(t *testing.T) {
 		t.Errorf("got %s", got)
 	}
 }
+
+func TestDateText(t *testing.T) {
+	d := Date{2026, time.March, 9}
+	b, _ := d.MarshalText()
+	if string(b) != "2026-03-09" {
+		t.Errorf("MarshalText = %s", b)
+	}
+	var back Date
+	if err := back.UnmarshalText(b); err != nil || back != d {
+		t.Errorf("UnmarshalText = %v, %v", back, err)
+	}
+	if err := back.UnmarshalText([]byte("9 March")); err == nil {
+		t.Error("expected an error")
+	}
+}
