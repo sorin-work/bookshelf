@@ -83,6 +83,12 @@
         <label><input type="checkbox" name="closed" value="{{.Day}}"{{if .Closed}} checked{{end}}> {{.Name}}</label>
       {{end}}
       </div>
+      <div class="field closed-dates">
+        <label for="closed_dates">Closure dates</label>
+        <textarea id="closed_dates" name="closed_dates" rows="4" placeholder="2026-12-24&#10;2026-07-20 to 2026-08-14">{{index $d.Values "closed_dates"}}</textarea>
+        <p class="hint">One date or range per line. Past dates are dropped when you save.</p>
+        {{template "field_error" index $d.Errors "closed_dates"}}
+      </div>
     </fieldset>
     <button type="submit">Save rules</button>
   </form>

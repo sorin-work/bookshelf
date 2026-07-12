@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
@@ -67,4 +68,33 @@ func settingsForm(kv ...string) url.Values {
 		v.Add(kv[i], kv[i+1])
 	}
 	return v
+}
+
+func TestParseClosedDates(t *testing.T) {
+	today := testDate(t, "2026-03-10")
+	got, err := parseClosedDates("2026-12-25\n\n2026-03-01\n 2026-04-03 to 2026-04-06 \n2026-12-25", today)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var s []string
+	for _, d := range got {
+		s = append(s, d.String())
+	}
+	want := "2026-04-03 2026-04-04 2026-04-05 2026-04-06 2026-12-25"
+	if strings.Join(s, " ") != want {
+		t.Errorf("got %v, want %s", s, want)
+	}
+	for _, bad := range []string{"25/12/2026", "2026-04-06 to 2026-04-03", "2026-01-01 to 2026-12-31"} {
+		if _, err := parseClosedDates(bad, testDate(t, "2026-01-01")); err == nil {
+			t.Errorf("%q: expected an error", bad)
+		}
+	}
+}
+
+func TestClosureDatesMoveDueDates(t *testing.T) {
+	c := newCirc(t)
+	wantRedirect(t, c.lib.post("/settings", settingsForm("loan_days", "21", "closed", "0", "closed_dates", "2026-03-31 to 2026-04-01")), "/settings")
+	// Due on Tuesday 31 March, which is now closed along with the 1st.
+	wantBody(t, c.checkout("C01"), "Due Thu 2 Apr")
+	wantBody(t, c.lib.get("/settings"), "2026-03-31\n2026-04-01")
 }
