@@ -50,13 +50,16 @@
   <p class="muted">{{$d.Total}} {{if eq $d.Total 1}}title{{else}}titles{{end}}{{with $d.Query.Q}} matching “{{.}}”{{end}}</p>
   <ul class="title-list">
     {{range $d.Titles}}
-    <li>
+    <li class="with-cover">
+      <div class="thumb">{{if .CoverURL}}<img src="{{.CoverURL}}" alt="" loading="lazy">{{end}}</div>
+      <div>
       <a href="/titles/{{.ID}}">{{.Title}}</a>{{with .Subtitle}} <span class="muted">: {{.}}</span>{{end}}
       <div class="muted">{{.Authors}}{{if and .Authors .Year}} · {{end}}{{with .Year}}{{.}}{{end}}</div>
       <div class="availability">
         {{if .Available}}<span class="badge ok">{{.Available}} available</span>
         {{else if .Copies}}<span class="badge warn">All out</span>
         {{else}}<span class="badge">Not in stock</span>{{end}}
+      </div>
       </div>
     </li>
     {{end}}
