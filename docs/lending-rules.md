@@ -16,7 +16,8 @@ A member can borrow when:
 The copy has to be on the shelf, or on the hold shelf for that member.
 
 The due date is the loan period (21 days) after today. If the library is
-closed that day (Sundays) the due date moves to the next day it is open.
+closed that day (Sundays, or one of the closure dates such as a bank
+holiday) the due date moves to the next day it is open.
 
 ## Renewing
 
