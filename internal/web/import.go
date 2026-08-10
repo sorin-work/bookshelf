@@ -208,3 +208,33 @@ func (s *Server) importTitles(w http.ResponseWriter, r *http.Request) {
 	s.log.Info("titles imported", "added", d.Added, "skipped", len(d.Skipped), "copies", d.Copies, "by", currentUser(r).ID)
 	s.render(w, r, http.StatusOK, "import.html", page{Title: "Import titles", Data: d})
 }
+
+// exportTitles downloads the catalogue in the same format the import
+// reads, as a backup or to move to another system.
+func (s *Server) exportTitles(w http.ResponseWriter, r *http.Request) {
+	rows, err := s.store.ExportCatalogue(r.Context())
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="catalogue-%s.csv"`, s.today()))
+	cw := csv.NewWriter(w)
+	_ = cw.Write(importColumns)
+	for _, row := range rows {
+		t := row.Title
+		year := ""
+		if t.Year != 0 {
+			year = strconv.Itoa(t.Year)
+		}
+		_ = cw.Write([]string{
+			t.ISBN, csvSafe(t.Title), csvSafe(t.Subtitle), csvSafe(strings.Join(t.Authors, "; ")),
+			csvSafe(strings.Join(t.Subjects, "; ")), csvSafe(t.Publisher), year, csvSafe(t.Description),
+			t.CoverURL, strings.Join(row.Barcodes, "; "),
+		})
+	}
+	cw.Flush()
+	if err := cw.Error(); err != nil {
+		s.log.Error("write catalogue csv", "err", err)
+	}
+}

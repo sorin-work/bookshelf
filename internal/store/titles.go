@@ -343,3 +343,32 @@ func (s *Store) DeleteTitle(ctx context.Context, id int64) error {
 		return err
 	})
 }
+
+// ExportRow is a title with its copies' barcodes, in the shape the CSV
+// import reads.
+type ExportRow struct {
+	Title    Title
+	Barcodes []string
+}
+
+// ExportCatalogue returns every title with the barcodes of its copies that
+// are still in the collection (not withdrawn), sorted by title.
+func (s *Store) ExportCatalogue(ctx context.Context) ([]ExportRow, error) {
+	ids, err := s.ids(ctx, `SELECT id FROM titles ORDER BY title COLLATE NOCASE, id`)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ExportRow, 0, len(ids))
+	for _, id := range ids {
+		t, err := s.TitleByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		barcodes, err := s.strings(ctx, `SELECT barcode FROM copies WHERE title_id = ? AND status != 'withdrawn' ORDER BY barcode`, id)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, ExportRow{Title: t, Barcodes: barcodes})
+	}
+	return out, nil
+}

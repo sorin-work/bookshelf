@@ -95,3 +95,22 @@ func TestImportTitles(t *testing.T) {
 
 	wantStatus(t, env.member("Mo", "mo@example.com").upload("/titles/import", "file", "x.csv", "title\nX\n"), http.StatusForbidden)
 }
+
+func TestExportRoundTrip(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	loc := lib.addTitle("title", "Dune", "isbn", "9780441172719", "authors", "Frank Herbert\nBrian Herbert",
+		"subjects", "Science fiction, Classics", "year", "1965")
+	lib.post(loc+"/copies", titleValues("barcode", "D-01"))
+	lib.post(loc+"/copies", titleValues("barcode", "D-02"))
+
+	r := lib.get("/titles/export.csv")
+	wantStatus(t, r, http.StatusOK)
+	wantBody(t, r, "isbn,title,subtitle,authors,subjects,publisher,year,description,cover_url,barcodes\n",
+		"9780441172719,Dune,,Frank Herbert; Brian Herbert,Classics; Science fiction,,1965,,,D-01; D-02\n")
+
+	rows, problems := parseImport(strings.NewReader(r.body), 2026)
+	if len(problems) > 0 || len(rows) != 1 || len(rows[0].Barcodes) != 2 || len(rows[0].Title.Authors) != 2 {
+		t.Errorf("export doesn't import back: %+v %+v", rows, problems)
+	}
+}
