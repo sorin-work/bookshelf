@@ -101,3 +101,23 @@ func TestCancelHoldWithHTMXHeader(t *testing.T) {
 	}
 	wantBody(t, ana.get("/account"), "No holds.")
 }
+
+func TestPlaceHoldForMember(t *testing.T) {
+	c := newCirc(t)
+	c.checkout("C01")
+	c.checkout("C02")
+	c.env.member("Ana Reader", "ana@example.com")
+	ana, _ := c.env.store.UserByEmail(t.Context(), "ana@example.com")
+
+	wantBody(t, c.lib.get(c.title), "Place a hold for a member")
+	wantStatus(t, c.lib.post(c.title+"/hold-for", titleValues("card", "123")), http.StatusUnprocessableEntity)
+	wantRedirect(t, c.lib.post(c.title+"/hold-for", titleValues("card", ana.CardNumber)), c.title+"#queue")
+	wantBody(t, c.lib.get(c.title), "Hold placed for Ana Reader, number 1 in the queue.")
+
+	r := c.lib.post(c.title+"/hold-for", titleValues("card", ana.CardNumber))
+	wantStatus(t, r, http.StatusConflict)
+	wantBody(t, r, "Ana Reader already has a hold")
+	// Mo has it on loan.
+	wantBody(t, c.lib.post(c.title+"/hold-for", titleValues("card", c.mo.CardNumber)), "Mo Member already has this title")
+	wantStatus(t, c.member.post(c.title+"/hold-for", titleValues("card", ana.CardNumber)), http.StatusForbidden)
+}

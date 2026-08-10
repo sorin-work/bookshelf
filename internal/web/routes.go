@@ -51,6 +51,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /copies/{id}/status", s.requireLibrarian(s.setCopyStatus))
 	mux.HandleFunc("POST /copies/{id}", s.requireLibrarian(s.updateCopy))
 	mux.HandleFunc("POST /titles/{id}/hold", s.requireUser(s.placeHold))
+	mux.HandleFunc("POST /titles/{id}/hold-for", s.requireLibrarian(s.placeHoldFor))
 	mux.HandleFunc("POST /holds/{id}/cancel", s.requireUser(s.cancelHold))
 	mux.HandleFunc("GET /holds", s.requireLibrarian(s.holds))
 	mux.HandleFunc("GET /overdue", s.requireLibrarian(s.overdue))

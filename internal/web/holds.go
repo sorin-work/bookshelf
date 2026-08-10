@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/sorin-work/bookshelf/internal/domain"
 	"github.com/sorin-work/bookshelf/internal/store"
@@ -113,4 +114,42 @@ func (s *Server) holds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.render(w, r, http.StatusOK, "holds.html", page{Title: "Holds", Data: holdsPage{Shelf: shelf, Waiting: waiting, Today: s.today()}})
+}
+
+// placeHoldFor lets a librarian put a member in the queue, for someone who
+// asks at the desk or on the phone.
+func (s *Server) placeHoldFor(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(r)
+	if !ok {
+		s.notFound(w, r)
+		return
+	}
+	card, err := domain.NormalizeCardNumber(r.PostFormValue("card"))
+	if err != nil {
+		http.Error(w, "That card number doesn't look right.", http.StatusUnprocessableEntity)
+		return
+	}
+	m, err := s.store.UserByCard(r.Context(), card)
+	if errors.Is(err, store.ErrNotFound) {
+		http.Error(w, "No member has card "+domain.FormatCardNumber(card)+".", http.StatusUnprocessableEntity)
+		return
+	}
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	h, err := s.store.PlaceHold(r.Context(), m.ID, id, s.today(), s.now())
+	if msg := holdMessage(err); msg != "" {
+		msg = strings.NewReplacer("You already have", m.Name+" already has", "You have", m.Name+" has",
+			"Your library card", m.Name+"'s library card").Replace(msg)
+		http.Error(w, msg, http.StatusConflict)
+		return
+	}
+	if err != nil {
+		s.loadFailed(w, r, err)
+		return
+	}
+	s.log.Info("hold placed for member", "hold_id", h.ID, "member_id", m.ID, "by", currentUser(r).ID)
+	s.setFlash(w, fmt.Sprintf("Hold placed for %s, number %d in the queue.", m.Name, h.Position))
+	http.Redirect(w, r, fmt.Sprintf("/titles/%d#queue", id), http.StatusSeeOther)
 }

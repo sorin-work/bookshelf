@@ -49,6 +49,14 @@
 </article>
 
 {{if and $.User $.User.IsLibrarian}}
+{{if and (not .Data.Available) .Data.Circulating}}
+<form method="post" action="/titles/{{$t.ID}}/hold-for" class="inline-form hold-for">
+  {{template "csrf" $}}
+  <label for="hold-card">Place a hold for a member</label>
+  <input id="hold-card" name="card" inputmode="numeric" placeholder="Library card number" autocomplete="off">
+  <button type="submit" class="secondary">Place hold</button>
+</form>
+{{end}}
 {{if .Data.Queue}}
 <section id="queue">
   <h2>Holds</h2>
