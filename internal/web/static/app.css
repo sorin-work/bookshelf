@@ -302,7 +302,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
   .row, .row.three, .grid-2, .catalogue { grid-template-columns: 1fr; }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .title-detail { grid-template-columns: 1fr; }
-  .cover img, .cover-placeholder { width: 140px; }
+  .cover, .cover img, .cover-placeholder { width: 140px; }
   .table { display: block; overflow-x: auto; white-space: nowrap; }
   .page-head { flex-wrap: wrap; }
   .search { flex-wrap: wrap; }
