@@ -124,7 +124,8 @@
     <div class="row three">
       <div class="field">
         <label for="barcode">Barcode</label>
-        <input id="barcode" name="barcode" value="{{$f.Barcode}}" required>
+        <input id="barcode" name="barcode" value="{{if $f.Barcode}}{{$f.Barcode}}{{else}}{{$f.Suggested}}{{end}}" required>
+        {{with $f.Suggested}}<p class="hint">Next free number in your series.</p>{{end}}
         {{template "field_error" index $f.Errors "barcode"}}
       </div>
       <div class="field">

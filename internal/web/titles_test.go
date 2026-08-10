@@ -112,6 +112,8 @@ func TestCopies(t *testing.T) {
 	wantRedirect(t, lib.post(loc+"/copies", titleValues("barcode", " b-0001 ", "shelf", "Children D")), loc+"#copies")
 	wantRedirect(t, lib.post(loc+"/copies", titleValues("barcode", "B-0002")), loc+"#copies")
 
+	wantBody(t, lib.get(loc), `name="barcode" value="B-0003"`)
+
 	r := lib.post(loc+"/copies", titleValues("barcode", "b-0001"))
 	wantStatus(t, r, http.StatusUnprocessableEntity)
 	wantBody(t, r, "Another copy already has this barcode.")

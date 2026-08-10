@@ -28,10 +28,12 @@ type titleView struct {
 }
 
 type copyForm struct {
-	Barcode string
-	Shelf   string
-	Note    string
-	Errors  formErrors
+	// Suggested is the next barcode in the library's series.
+	Suggested string
+	Barcode   string
+	Shelf     string
+	Note      string
+	Errors    formErrors
 }
 
 func (s *Server) loadTitleView(r *http.Request, id int64) (titleView, error) {
@@ -66,6 +68,11 @@ func (s *Server) loadTitleView(r *http.Request, id int64) (titleView, error) {
 		}
 	}
 	v.CanHold = user != nil && v.MyHold == nil && v.Available == 0 && v.Circulating > 0
+	if user != nil && user.IsLibrarian() {
+		if v.CopyForm.Suggested, err = s.store.SuggestBarcode(r.Context()); err != nil {
+			return titleView{}, err
+		}
+	}
 	return v, nil
 }
 
@@ -111,6 +118,7 @@ func (s *Server) addCopy(w http.ResponseWriter, r *http.Request) {
 		s.loadFailed(w, r, err)
 		return
 	}
+	f.Suggested = v.CopyForm.Suggested
 	v.CopyForm = f
 	s.render(w, r, http.StatusUnprocessableEntity, "title.html", page{Title: v.Title.Title, Data: v})
 }

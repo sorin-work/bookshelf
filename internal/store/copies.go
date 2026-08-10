@@ -157,3 +157,31 @@ func (s *Store) UpdateCopy(ctx context.Context, id int64, shelf, note string) er
 	}
 	return nil
 }
+
+// SuggestBarcode proposes the next barcode in the library's own series:
+// the most recently added copy's barcode with its trailing number
+// increased, skipping any that are taken. It returns "" when the last
+// barcode doesn't end in a number.
+func (s *Store) SuggestBarcode(ctx context.Context) (string, error) {
+	var last string
+	err := s.db.QueryRowContext(ctx, `SELECT barcode FROM copies ORDER BY id DESC LIMIT 1`).Scan(&last)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	for i := 0; i < 100; i++ {
+		next := domain.NextBarcode(last)
+		if next == "" {
+			return "", nil
+		}
+		if _, err := s.CopyByBarcode(ctx, next); errors.Is(err, ErrNotFound) {
+			return next, nil
+		} else if err != nil {
+			return "", err
+		}
+		last = next
+	}
+	return "", nil
+}

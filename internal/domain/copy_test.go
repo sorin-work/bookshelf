@@ -21,3 +21,19 @@ func TestNormalizeBarcode(t *testing.T) {
 		}
 	}
 }
+
+func TestNextBarcode(t *testing.T) {
+	tests := map[string]string{
+		"BK-0001": "BK-0002",
+		"BK-0099": "BK-0100",
+		"BK-9999": "BK-10000",
+		"42":      "43",
+		"LIB-A":   "",
+		"":        "",
+	}
+	for in, want := range tests {
+		if got := NextBarcode(in); got != want {
+			t.Errorf("NextBarcode(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
