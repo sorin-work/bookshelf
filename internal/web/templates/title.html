@@ -2,7 +2,8 @@
 {{$t := .Data.Title}}
 <article class="title-detail">
   <div class="cover">
-    {{if $t.CoverURL}}<img src="{{$t.CoverURL}}" alt="Cover of {{$t.Title}}" loading="lazy">{{else}}<div class="cover-placeholder" aria-hidden="true">{{$t.Title}}</div>{{end}}
+    <div class="cover-placeholder" aria-hidden="true">{{$t.Title}}</div>
+    {{if $t.CoverURL}}<img src="{{$t.CoverURL}}" alt="Cover of {{$t.Title}}" loading="lazy">{{end}}
   </div>
   <div>
     <h1>{{$t.Title}}</h1>

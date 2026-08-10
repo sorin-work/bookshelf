@@ -48,3 +48,13 @@ document.addEventListener("keydown", (event) => {
     search.select();
   }
 });
+
+// Covers live on other sites and sometimes disappear. Hide a broken image
+// instead of showing the browser's broken image icon; the placeholder
+// behind it shows through.
+document.addEventListener("error", (event) => {
+  const img = event.target;
+  if (img instanceof HTMLImageElement) {
+    img.hidden = true;
+  }
+}, true);
