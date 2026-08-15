@@ -11,7 +11,11 @@ import (
 )
 
 type MemberFilter struct {
-	Query  string
+	Query string
+	// Show narrows the list: "expired" cards, "owing" fines, "overdue"
+	// loans or "closed" accounts. Empty shows everyone.
+	Show   string
+	Today  domain.Date
 	Limit  int
 	Offset int
 }
@@ -22,13 +26,29 @@ func (s *Store) ListMembers(ctx context.Context, f MemberFilter) ([]User, int, e
 	if f.Limit <= 0 {
 		f.Limit = 25
 	}
-	where := ""
+	var conds []string
 	var args []any
 	if q := strings.TrimSpace(f.Query); q != "" {
 		like := likeContains(q)
 		card := strings.NewReplacer(" ", "", "-", "").Replace(q)
-		where = `WHERE name LIKE ? ESCAPE '\' OR email LIKE ? ESCAPE '\' OR card_number LIKE ? ESCAPE '\'`
+		conds = append(conds, `(name LIKE ? ESCAPE '\' OR email LIKE ? ESCAPE '\' OR card_number LIKE ? ESCAPE '\')`)
 		args = append(args, like, like, likeContains(card))
+	}
+	switch f.Show {
+	case "expired":
+		conds = append(conds, `card_expires < ?`)
+		args = append(args, f.Today.String())
+	case "owing":
+		conds = append(conds, `EXISTS (SELECT 1 FROM fines WHERE fines.user_id = users.id AND fines.status = 'open')`)
+	case "overdue":
+		conds = append(conds, `EXISTS (SELECT 1 FROM loans WHERE loans.user_id = users.id AND loans.returned_at IS NULL AND loans.due_on < ?)`)
+		args = append(args, f.Today.String())
+	case "closed":
+		conds = append(conds, `NOT active`)
+	}
+	where := ""
+	if len(conds) > 0 {
+		where = "WHERE " + strings.Join(conds, " AND ")
 	}
 	var total int
 	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM users `+where, args...).Scan(&total); err != nil {

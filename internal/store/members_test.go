@@ -100,3 +100,38 @@ func TestSetActive(t *testing.T) {
 		t.Errorf("missing member: %v", err)
 	}
 }
+
+func TestListMembersShow(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	l, err := f.checkout(t, "B1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	later := l.Due.AddDays(2)
+	count := func(show string, today domain.Date) int {
+		_, total, err := f.s.ListMembers(ctx, MemberFilter{Show: show, Today: today})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return total
+	}
+	if n := count("overdue", f.today); n != 0 {
+		t.Errorf("overdue today: %d", n)
+	}
+	if n := count("overdue", later); n != 1 {
+		t.Errorf("overdue later: %d", n)
+	}
+	if n := count("expired", f.today.AddYears(2)); n != 2 {
+		t.Errorf("expired in two years: %d", n)
+	}
+	if _, err := f.s.AddCharge(ctx, f.member.ID, 100, "x", now); err != nil {
+		t.Fatal(err)
+	}
+	if n := count("owing", f.today); n != 1 {
+		t.Errorf("owing: %d", n)
+	}
+	if n := count("closed", f.today); n != 0 {
+		t.Errorf("closed: %d", n)
+	}
+}

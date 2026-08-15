@@ -7,6 +7,14 @@
 <form method="get" action="/members" class="search" role="search">
   <label for="q" class="visually-hidden">Search members</label>
   <input id="q" name="q" type="search" value="{{$d.Query}}" placeholder="Name, email or card number">
+  <label for="show" class="visually-hidden">Show</label>
+  <select id="show" name="show" class="show-select">
+    <option value="">Everyone</option>
+    <option value="overdue"{{if eq $d.Show "overdue"}} selected{{end}}>With overdue loans</option>
+    <option value="owing"{{if eq $d.Show "owing"}} selected{{end}}>Owing fines</option>
+    <option value="expired"{{if eq $d.Show "expired"}} selected{{end}}>Card expired</option>
+    <option value="closed"{{if eq $d.Show "closed"}} selected{{end}}>Closed accounts</option>
+  </select>
   <button type="submit">Search</button>
 </form>
 {{if $d.Members}}
@@ -29,6 +37,6 @@
   {{with $d.NextURL}}<a href="{{.}}">Next →</a>{{end}}
 </nav>
 {{else}}
-<p class="empty">{{if $d.Query}}No one matches “{{$d.Query}}”.{{else}}No members yet.{{end}}</p>
+<p class="empty">{{if or $d.Query $d.Show}}No one matches.{{else}}No members yet.{{end}}</p>
 {{end}}
 {{end}}

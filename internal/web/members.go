@@ -17,6 +17,7 @@ const membersPageSize = 25
 
 type membersPage struct {
 	Query   string
+	Show    string
 	Members []store.User
 	Total   int
 	Page    int
@@ -26,31 +27,35 @@ type membersPage struct {
 
 func (s *Server) members(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	show := r.URL.Query().Get("show")
 	pageNum, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	if pageNum < 1 {
 		pageNum = 1
 	}
 	members, total, err := s.store.ListMembers(r.Context(), store.MemberFilter{
-		Query: q, Limit: membersPageSize, Offset: (pageNum - 1) * membersPageSize,
+		Query: q, Show: show, Today: s.today(), Limit: membersPageSize, Offset: (pageNum - 1) * membersPageSize,
 	})
 	if err != nil {
 		s.serverError(w, r, err)
 		return
 	}
-	d := membersPage{Query: q, Members: members, Total: total, Page: pageNum}
+	d := membersPage{Query: q, Show: show, Members: members, Total: total, Page: pageNum}
 	if pageNum > 1 {
-		d.PrevURL = membersURL(q, pageNum-1)
+		d.PrevURL = membersURL(q, show, pageNum-1)
 	}
 	if pageNum*membersPageSize < total {
-		d.NextURL = membersURL(q, pageNum+1)
+		d.NextURL = membersURL(q, show, pageNum+1)
 	}
 	s.render(w, r, http.StatusOK, "members.html", page{Title: "Members", Data: d})
 }
 
-func membersURL(q string, pageNum int) string {
+func membersURL(q, show string, pageNum int) string {
 	v := url.Values{}
 	if q != "" {
 		v.Set("q", q)
+	}
+	if show != "" {
+		v.Set("show", show)
 	}
 	if pageNum > 1 {
 		v.Set("page", strconv.Itoa(pageNum))
