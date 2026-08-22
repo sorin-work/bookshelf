@@ -146,10 +146,10 @@ func TestListTitlesCountsOnlyCirculatingCopies(t *testing.T) {
 	}
 	lost, _ := s.CopyByBarcode(ctx, "M-1")
 	gone, _ := s.CopyByBarcode(ctx, "M-2")
-	if err := s.SetCopyStatus(ctx, lost.ID, domain.CopyLost); err != nil {
+	if err := s.SetCopyStatus(ctx, lost.ID, domain.CopyLost, domain.DateOf(now)); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetCopyStatus(ctx, gone.ID, domain.CopyWithdrawn); err != nil {
+	if err := s.SetCopyStatus(ctx, gone.ID, domain.CopyWithdrawn, domain.DateOf(now)); err != nil {
 		t.Fatal(err)
 	}
 	got, _, err := s.ListTitles(ctx, TitleFilter{})

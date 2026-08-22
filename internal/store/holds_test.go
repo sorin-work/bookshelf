@@ -23,7 +23,7 @@ func newHoldFixture(t *testing.T) holdFixture {
 	// Keep only B1 in circulation.
 	for _, b := range []string{"B2", "B3", "B4", "B5", "B6"} {
 		c, _ := f.s.CopyByBarcode(ctx, b)
-		if err := f.s.SetCopyStatus(ctx, c.ID, domain.CopyWithdrawn); err != nil {
+		if err := f.s.SetCopyStatus(ctx, c.ID, domain.CopyWithdrawn, domain.DateOf(now)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -176,7 +176,7 @@ func TestReadyHoldDoesNotBlockRenewals(t *testing.T) {
 	ctx := context.Background()
 	// Bring B2 back so the title has two copies, both out.
 	c, _ := f.s.CopyByBarcode(ctx, "B2")
-	if err := f.s.SetCopyStatus(ctx, c.ID, domain.CopyAvailable); err != nil {
+	if err := f.s.SetCopyStatus(ctx, c.ID, domain.CopyAvailable, domain.DateOf(now)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := f.s.Checkout(ctx, CheckoutRequest{UserID: f.ana.ID, Barcode: "B2", Today: f.today, Now: now}); err != nil {
@@ -196,5 +196,28 @@ func TestReadyHoldDoesNotBlockRenewals(t *testing.T) {
 	}
 	if _, err := f.s.Renew(ctx, loans[0].ID, f.today); err != nil {
 		t.Errorf("renewal with bob's copy on the hold shelf: %v", err)
+	}
+}
+
+func TestFoundCopyGoesToTheQueue(t *testing.T) {
+	f := newHoldFixture(t)
+	ctx := context.Background()
+	hold, err := f.s.PlaceHold(ctx, f.ana.ID, f.titleID, f.today, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// B2 was withdrawn by the fixture; it turns up again.
+	c, _ := f.s.CopyByBarcode(ctx, "B2")
+	if err := f.s.SetCopyStatus(ctx, c.ID, domain.CopyAvailable, f.today); err != nil {
+		t.Fatal(err)
+	}
+	c, _ = f.s.CopyByBarcode(ctx, "B2")
+	h, _ := f.s.HoldByID(ctx, hold.ID)
+	if c.Status != domain.CopyOnHoldShelf || h.Status != domain.HoldReady || h.Barcode != "B2" {
+		t.Errorf("copy %s, hold %s with %q", c.Status, h.Status, h.Barcode)
+	}
+	// Copies in circulation can't be changed by hand.
+	if err := f.s.SetCopyStatus(ctx, c.ID, domain.CopyLost, f.today); !errors.Is(err, ErrNotFound) {
+		t.Errorf("losing a copy on the hold shelf: %v", err)
 	}
 }

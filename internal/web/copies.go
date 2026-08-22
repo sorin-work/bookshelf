@@ -141,7 +141,7 @@ func (s *Server) setCopyStatus(w http.ResponseWriter, r *http.Request) {
 		s.loadFailed(w, r, err)
 		return
 	}
-	if err := s.store.SetCopyStatus(r.Context(), id, status); err != nil {
+	if err := s.store.SetCopyStatus(r.Context(), id, status, s.today()); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			http.Error(w, "This copy is on loan or waiting for pickup. Check it in first.", http.StatusConflict)
 			return

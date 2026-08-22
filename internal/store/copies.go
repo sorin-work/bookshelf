@@ -101,18 +101,29 @@ func (s *Store) CopiesForTitle(ctx context.Context, titleID int64) ([]Copy, erro
 
 // SetCopyStatus moves a copy between the statuses a librarian controls by
 // hand: available, lost and withdrawn. Copies on loan or on the hold shelf
-// change status through circulation instead.
-func (s *Store) SetCopyStatus(ctx context.Context, id int64, status domain.CopyStatus) error {
-	res, err := s.db.ExecContext(ctx,
-		`UPDATE copies SET status = ? WHERE id = ? AND status IN ('available', 'lost', 'withdrawn')`,
-		string(status), id)
-	if err != nil {
+// change status through circulation instead. A copy that turns up again
+// goes to the first hold in the queue, if anyone is waiting.
+func (s *Store) SetCopyStatus(ctx context.Context, id int64, status domain.CopyStatus, today domain.Date) error {
+	return s.inTx(ctx, func(tx *sql.Tx) error {
+		var current domain.CopyStatus
+		err := tx.QueryRowContext(ctx, `SELECT status FROM copies WHERE id = ?`, id).Scan(&current)
+		if errors.Is(err, sql.ErrNoRows) || current == domain.CopyOnLoan || current == domain.CopyOnHoldShelf {
+			return ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if status == domain.CopyAvailable {
+			policy, err := loadPolicy(ctx, tx)
+			if err != nil {
+				return err
+			}
+			_, err = shelveCopy(ctx, tx, id, policy, today)
+			return err
+		}
+		_, err = tx.ExecContext(ctx, `UPDATE copies SET status = ? WHERE id = ?`, string(status), id)
 		return err
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return ErrNotFound
-	}
-	return nil
+	})
 }
 
 // CopiesWithWhereabouts lists a title's copies with the current borrower

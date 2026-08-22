@@ -95,7 +95,7 @@ func TestCheckoutRules(t *testing.T) {
 	ctx := context.Background()
 
 	c, _ := f.s.CopyByBarcode(ctx, "B6")
-	if err := f.s.SetCopyStatus(ctx, c.ID, domain.CopyLost); err != nil {
+	if err := f.s.SetCopyStatus(ctx, c.ID, domain.CopyLost, domain.DateOf(now)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := f.checkout(t, "B6"); !errors.Is(err, ErrCopyUnavailable) {
