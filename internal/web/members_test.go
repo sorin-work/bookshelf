@@ -124,3 +124,14 @@ func TestCloseAccount(t *testing.T) {
 	wantRedirect(t, c.lib.post(member+"/active", titleValues("active", "1")), member)
 	wantRedirect(t, c.env.client().login("mo@example.com", "long enough"), "/")
 }
+
+func TestPrintCard(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	m := env.member("Mo", "mo@example.com")
+	mo, _ := env.store.UserByEmail(t.Context(), "mo@example.com")
+	r := lib.get("/members/" + itoa(mo.ID) + "/card")
+	wantStatus(t, r, http.StatusOK)
+	wantBody(t, r, mo.FormattedCard(), "Valid until 10 Mar 2027", "Bookshelf")
+	wantStatus(t, m.get("/members/"+itoa(mo.ID)+"/card"), http.StatusForbidden)
+}

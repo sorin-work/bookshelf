@@ -20,3 +20,22 @@
   <p class="no-print"><a href="/members/{{.Data.Member.ID}}">Back to {{.Data.Member.Name}}</a></p>
 </body>
 </html>{{end}}
+
+{{define "card"}}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Library card · {{.Data.Member.Name}}</title>
+  <link rel="stylesheet" href="/static/slip.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body class="print-card" data-print>
+  <div class="library-card-print">
+    <p class="library">{{.Library}}</p>
+    <p class="name">{{.Data.Member.Name}}</p>
+    <p class="number">{{.Data.Member.FormattedCard}}</p>
+    <p class="expires">Valid until {{.Data.Member.CardExpires.Format "2 Jan 2006"}}</p>
+  </div>
+  <p class="no-print"><a href="/members/{{.Data.Member.ID}}">Back to {{.Data.Member.Name}}</a></p>
+</body>
+</html>{{end}}

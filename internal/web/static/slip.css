@@ -16,3 +16,21 @@ body.slip {
   .no-print { display: none; }
   @page { margin: 0; }
 }
+
+/* A credit card sized library card. */
+body.print-card { margin: 10mm; font-family: system-ui, sans-serif; color: #000; background: #fff; }
+.library-card-print {
+  width: 85.6mm;
+  height: 54mm;
+  box-sizing: border-box;
+  padding: 5mm;
+  border: 1px solid #000;
+  border-radius: 3mm;
+  display: flex;
+  flex-direction: column;
+}
+.library-card-print p { margin: 0; }
+.library-card-print .library { font-weight: 700; font-size: 13pt; }
+.library-card-print .name { margin-top: auto; font-size: 11pt; }
+.library-card-print .number { font-family: ui-monospace, monospace; font-size: 15pt; letter-spacing: 0.08em; }
+.library-card-print .expires { font-size: 8pt; }

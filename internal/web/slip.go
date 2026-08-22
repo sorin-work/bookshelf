@@ -50,3 +50,13 @@ func (s *Server) slip(w http.ResponseWriter, r *http.Request) {
 	}
 	s.execute(w, r, http.StatusOK, "slip.html", "slip", page{Title: "Due date slip", Data: slipPage{Member: m, Loans: loans}})
 }
+
+// card is a printable library card, for members who don't get a plastic
+// one: cut it out and laminate it.
+func (s *Server) card(w http.ResponseWriter, r *http.Request) {
+	m, ok := s.memberFromPath(w, r)
+	if !ok {
+		return
+	}
+	s.execute(w, r, http.StatusOK, "slip.html", "card", page{Title: "Library card", Data: slipPage{Member: m}})
+}

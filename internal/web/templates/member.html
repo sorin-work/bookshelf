@@ -16,6 +16,7 @@
       {{template "csrf" $}}
       <button type="submit" class="secondary">Renew card for a year</button>
     </form>
+    <a class="print-link" href="/members/{{$m.ID}}/card" target="_blank">Print card</a>
   </section>
   <section class="card">
     <dl class="facts">
