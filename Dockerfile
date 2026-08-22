@@ -5,7 +5,10 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/bookshelf ./cmd/bookshelf
+ARG VERSION=""
+RUN CGO_ENABLED=0 go build -trimpath \
+  -ldflags="-s -w -X github.com/sorin-work/bookshelf/internal/version.Version=${VERSION}" \
+  -o /out/bookshelf ./cmd/bookshelf
 
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates tzdata \

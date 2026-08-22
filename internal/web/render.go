@@ -14,6 +14,7 @@ import (
 
 	"github.com/sorin-work/bookshelf/internal/domain"
 	"github.com/sorin-work/bookshelf/internal/store"
+	"github.com/sorin-work/bookshelf/internal/version"
 )
 
 //go:embed templates
@@ -57,6 +58,7 @@ func templateFuncs(loc *time.Location) template.FuncMap {
 			return m, nil
 		},
 		"hasPrefix": strings.HasPrefix,
+		"version":   version.String,
 		"money": func(cents int, currency string) string {
 			return domain.Policy{Currency: currency}.FormatMoney(cents)
 		},

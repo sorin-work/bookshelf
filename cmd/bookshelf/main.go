@@ -19,6 +19,7 @@ import (
 	"github.com/sorin-work/bookshelf/internal/openlibrary"
 	"github.com/sorin-work/bookshelf/internal/seed"
 	"github.com/sorin-work/bookshelf/internal/store"
+	"github.com/sorin-work/bookshelf/internal/version"
 	"github.com/sorin-work/bookshelf/internal/web"
 )
 
@@ -97,7 +98,7 @@ func run() error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Info("listening", "addr", cfg.Addr)
+		log.Info("listening", "addr", cfg.Addr, "version", version.String())
 		errCh <- srv.ListenAndServe()
 	}()
 
