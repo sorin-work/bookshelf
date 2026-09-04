@@ -121,3 +121,25 @@ func TestPlaceHoldForMember(t *testing.T) {
 	wantBody(t, c.lib.post(c.title+"/hold-for", titleValues("card", c.mo.CardNumber)), "Mo Member already has this title")
 	wantStatus(t, c.member.post(c.title+"/hold-for", titleValues("card", ana.CardNumber)), http.StatusForbidden)
 }
+
+func TestWithdrawingLastCopyCancelsHolds(t *testing.T) {
+	c := newCirc(t)
+	c2, _ := c.env.store.CopyByBarcode(t.Context(), "C02")
+	c.lib.post("/copies/"+itoa(c2.ID)+"/status", titleValues("status", "withdrawn"))
+	c.checkout("C01")
+	ana := c.env.member("Ana Reader", "ana@example.com")
+	wantRedirect(t, ana.post(c.title+"/hold", nil), c.title)
+
+	// Mo loses the only copy; Ana is still waiting for it.
+	loans, _ := c.env.store.ActiveLoans(t.Context(), c.mo.ID)
+	c.lib.post("/loans/"+itoa(loans[0].ID)+"/lost", nil)
+	if q, _ := c.env.store.HoldQueue(t.Context(), 1); len(q) != 1 {
+		t.Fatalf("queue %+v", q)
+	}
+
+	// Once it's written off for good, nobody can get a copy any more.
+	c1, _ := c.env.store.CopyByBarcode(t.Context(), "C01")
+	wantRedirect(t, c.lib.post("/copies/"+itoa(c1.ID)+"/status", titleValues("status", "withdrawn")), c.title+"#copies")
+	wantBody(t, c.lib.get(c.title), "That was the last copy, so 1 waiting hold was cancelled.")
+	wantBody(t, ana.get("/account"), "No holds.")
+}

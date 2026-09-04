@@ -150,6 +150,16 @@ func (s *Server) setCopyStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.log.Info("copy status changed", "copy_id", id, "status", status, "by", currentUser(r).ID)
+	if status == domain.CopyWithdrawn {
+		n, err := s.store.CancelUnfillableHolds(r.Context(), c.TitleID, s.now())
+		if err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+		if n > 0 {
+			s.setFlash(w, fmt.Sprintf("That was the last copy, so %d waiting %s cancelled.", n, plural(n, "hold was", "holds were")))
+		}
+	}
 	http.Redirect(w, r, fmt.Sprintf("/titles/%d#copies", c.TitleID), http.StatusSeeOther)
 }
 

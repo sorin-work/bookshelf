@@ -269,3 +269,18 @@ func (s *Store) HoldShelf(ctx context.Context) ([]HoldRow, error) {
 func (s *Store) WaitingHolds(ctx context.Context, limit int) ([]HoldRow, error) {
 	return queryHolds(ctx, s.db, `WHERE h.status = 'waiting' ORDER BY h.placed_at, h.id LIMIT ?`, limit)
 }
+
+// CancelUnfillableHolds cancels the waiting holds on a title that has no
+// copies left that could ever come back: every copy is withdrawn. It
+// returns how many it cancelled.
+func (s *Store) CancelUnfillableHolds(ctx context.Context, titleID int64, now time.Time) (int, error) {
+	res, err := s.db.ExecContext(ctx, `UPDATE holds SET status = 'cancelled', closed_at = ?
+		WHERE title_id = ? AND status = 'waiting'
+		AND NOT EXISTS (SELECT 1 FROM copies WHERE title_id = ? AND status != 'withdrawn')`,
+		fmtTime(now), titleID, titleID)
+	if err != nil {
+		return 0, err
+	}
+	n, err := res.RowsAffected()
+	return int(n), err
+}
