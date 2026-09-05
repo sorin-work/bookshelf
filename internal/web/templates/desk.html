@@ -32,6 +32,7 @@
 {{end}}
 
 {{define "desk_result"}}
+{{if .Data.RefreshMember}}<div id="desk-member" hx-swap-oob="true">{{template "desk_member" .}}</div>{{end}}
 {{with .Data.Result}}
   <div class="alert {{if .OK}}ok{{else}}error{{end}}">
     <p>{{.Message}}</p>

@@ -23,6 +23,9 @@ type deskPage struct {
 	Card   string
 	Result *deskResult
 	Member *memberSummary
+	// RefreshMember sends the member summary along with an htmx result so
+	// the loan count and fines stay current.
+	RefreshMember bool
 }
 
 // memberSummary is shown at the desk once a card has been scanned, so the
@@ -113,6 +116,7 @@ func (s *Server) deskRespond(w http.ResponseWriter, r *http.Request, d deskPage)
 		status = http.StatusUnprocessableEntity
 	}
 	if isHTMX(r) {
+		d.RefreshMember = d.Member != nil
 		// htmx only swaps 2xx responses by default, so failures are sent
 		// as 200 with the error in the fragment.
 		s.execute(w, r, http.StatusOK, "desk.html", "desk_result", page{Data: d})
@@ -189,6 +193,10 @@ func (s *Server) deskCheckout(w http.ResponseWriter, r *http.Request) {
 		OK:      true,
 		Message: fmt.Sprintf("%s checked out to %s.", loan.Title, member.Name),
 		Loan:    &loan,
+	}
+	if d.Member, err = s.memberSummary(r, card); err != nil {
+		s.serverError(w, r, err)
+		return
 	}
 	s.deskRespond(w, r, d)
 }

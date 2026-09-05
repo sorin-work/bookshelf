@@ -109,6 +109,13 @@ func TestDeskHTMXFragment(t *testing.T) {
 	if strings.Contains(r.body, "<html") {
 		t.Error("htmx request got a whole page")
 	}
+
+	req, _ = http.NewRequest(http.MethodPost, c.env.srv.URL+"/desk/checkout",
+		strings.NewReader(titleValues("card", c.mo.CardNumber, "barcode", "C01", "csrf_token", c.lib.csrf()).Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+	r = c.lib.do(req)
+	wantBody(t, r, `<div id="desk-member" hx-swap-oob="true">`, "1 on loan")
 }
 
 func TestRenewals(t *testing.T) {
