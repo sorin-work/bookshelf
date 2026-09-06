@@ -24,10 +24,40 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
+	var err error
+	switch {
+	case len(os.Args) == 3 && os.Args[1] == "backup":
+		err = backup(os.Args[2])
+	case len(os.Args) > 1:
+		fmt.Fprintln(os.Stderr, "usage: bookshelf            run the web app\n       bookshelf backup FILE  copy the database to FILE")
+		os.Exit(2)
+	default:
+		err = run()
+	}
+	if err != nil {
 		slog.Error("fatal", "err", err)
 		os.Exit(1)
 	}
+}
+
+// backup copies the database the app is configured to use, which is safe
+// to do while the app is running.
+func backup(path string) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("config: %w", err)
+	}
+	ctx := context.Background()
+	conn, err := db.Open(ctx, cfg.DBPath)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	if err := db.Backup(ctx, conn, path); err != nil {
+		return err
+	}
+	fmt.Println("backed up", cfg.DBPath, "to", path)
+	return nil
 }
 
 func run() error {

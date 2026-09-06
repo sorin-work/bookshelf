@@ -55,6 +55,17 @@ SEED_DEMO=true go run ./cmd/bookshelf
 The database is a single SQLite file (`bookshelf.db` in the current
 directory unless `DB_PATH` says otherwise). Migrations run on start.
 
+## Backups
+
+Everything lives in the one SQLite file. To copy it safely while the app
+is running:
+
+```sh
+bookshelf backup /backups/bookshelf-$(date +%F).db
+# or, with Docker:
+docker compose exec app bookshelf backup /data/backup-$(date +%F).db
+```
+
 ## Configuration
 
 | Variable           | Default        | Meaning                                              |
