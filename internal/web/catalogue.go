@@ -66,11 +66,8 @@ type cataloguePage struct {
 	Query    catalogueQuery
 	Titles   []store.TitleSummary
 	Total    int
-	HasPrev  bool
-	HasNext  bool
-	PrevURL  string
-	NextURL  string
 	Subjects []store.SubjectCount
+	pager
 }
 
 func (s *Server) catalogue(w http.ResponseWriter, r *http.Request) {
@@ -89,13 +86,10 @@ func (s *Server) catalogue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := cataloguePage{
-		Query:   q,
-		Titles:  titles,
-		Total:   total,
-		HasPrev: q.Page > 1,
-		HasNext: q.Page*cataloguePageSize < total,
-		PrevURL: q.URL(q.Page - 1),
-		NextURL: q.URL(q.Page + 1),
+		Query:  q,
+		Titles: titles,
+		Total:  total,
+		pager:  newPager(q.Page, cataloguePageSize, total, q.URL),
 	}
 	if isHTMX(r) && r.Header.Get("HX-Target") == "results" {
 		// Search as you type: only the results are replaced.

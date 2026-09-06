@@ -21,17 +21,13 @@ type membersPage struct {
 	Members []store.User
 	Total   int
 	Page    int
-	PrevURL string
-	NextURL string
+	pager
 }
 
 func (s *Server) members(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	show := r.URL.Query().Get("show")
-	pageNum, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	if pageNum < 1 {
-		pageNum = 1
-	}
+	pageNum := pageParam(r)
 	members, total, err := s.store.ListMembers(r.Context(), store.MemberFilter{
 		Query: q, Show: show, Today: s.today(), Limit: membersPageSize, Offset: (pageNum - 1) * membersPageSize,
 	})
@@ -40,12 +36,7 @@ func (s *Server) members(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	d := membersPage{Query: q, Show: show, Members: members, Total: total, Page: pageNum}
-	if pageNum > 1 {
-		d.PrevURL = membersURL(q, show, pageNum-1)
-	}
-	if pageNum*membersPageSize < total {
-		d.NextURL = membersURL(q, show, pageNum+1)
-	}
+	d.pager = newPager(pageNum, membersPageSize, total, func(n int) string { return membersURL(q, show, n) })
 	s.render(w, r, http.StatusOK, "members.html", page{Title: "Members", Data: d})
 }
 

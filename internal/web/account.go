@@ -64,31 +64,24 @@ func (s *Server) account(w http.ResponseWriter, r *http.Request) {
 const historyPageSize = 25
 
 type historyPage struct {
-	Loans   []store.LoanRow
-	Total   int
-	PrevURL string
-	NextURL string
+	pager
+	Loans []store.LoanRow
+	Total int
 }
 
 // history lists everything the member has borrowed and returned.
 func (s *Server) history(w http.ResponseWriter, r *http.Request) {
 	u := currentUser(r)
-	pageNum, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	if pageNum < 1 {
-		pageNum = 1
-	}
+	pageNum := pageParam(r)
 	loans, total, err := s.store.LoanHistoryPage(r.Context(), u.ID, historyPageSize, (pageNum-1)*historyPageSize)
 	if err != nil {
 		s.serverError(w, r, err)
 		return
 	}
 	d := historyPage{Loans: loans, Total: total}
-	if pageNum > 1 {
-		d.PrevURL = "/account/history?page=" + strconv.Itoa(pageNum-1)
-	}
-	if pageNum*historyPageSize < total {
-		d.NextURL = "/account/history?page=" + strconv.Itoa(pageNum+1)
-	}
+	d.pager = newPager(pageNum, historyPageSize, total, func(n int) string {
+		return "/account/history?page=" + strconv.Itoa(n)
+	})
 	s.render(w, r, http.StatusOK, "history.html", page{Title: "Reading history", Data: d})
 }
 
