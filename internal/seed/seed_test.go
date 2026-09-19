@@ -67,3 +67,34 @@ func TestDemo(t *testing.T) {
 		t.Errorf("second run changed the data: %+v vs %+v", again, stats)
 	}
 }
+
+// The same clock gives the same library every time, so screenshots and
+// bug reports from the demo can be reproduced.
+func TestDemoIsDeterministic(t *testing.T) {
+	auth.Cost = bcrypt.MinCost
+	now := time.Date(2026, time.June, 1, 12, 0, 0, 0, time.UTC)
+	snapshot := func() store.Stats {
+		ctx := context.Background()
+		conn, err := db.Open(ctx, filepath.Join(t.TempDir(), "seed.db"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer conn.Close()
+		if _, err := db.Migrate(ctx, conn); err != nil {
+			t.Fatal(err)
+		}
+		st := store.New(conn)
+		if err := Demo(ctx, st, Options{Now: now, Days: 60, Logger: slog.New(slog.NewTextHandler(io.Discard, nil))}); err != nil {
+			t.Fatal(err)
+		}
+		day := now.Truncate(24 * time.Hour)
+		stats, err := st.DashboardStats(ctx, domain.DateOf(now), day, day.Add(24*time.Hour))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return stats
+	}
+	if a, b := snapshot(), snapshot(); a != b {
+		t.Errorf("two runs differ:\n%+v\n%+v", a, b)
+	}
+}
