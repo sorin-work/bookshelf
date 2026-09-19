@@ -19,6 +19,8 @@ type accountPage struct {
 	Fines           []store.Fine
 	Owed            int
 	Currency        string
+	// Renewable counts the loans that can be renewed right now.
+	Renewable int
 }
 
 // account is the member's own page: their card, what they have out and
@@ -35,6 +37,11 @@ func (s *Server) account(w http.ResponseWriter, r *http.Request) {
 	if d.Loans, err = s.loanLines(r, active); err != nil {
 		s.serverError(w, r, err)
 		return
+	}
+	for _, l := range d.Loans {
+		if l.CanRenew {
+			d.Renewable++
+		}
 	}
 	if d.Holds, err = s.store.OpenHolds(r.Context(), u.ID); err != nil {
 		s.serverError(w, r, err)

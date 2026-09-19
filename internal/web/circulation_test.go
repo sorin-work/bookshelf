@@ -229,3 +229,28 @@ func TestReadingHistory(t *testing.T) {
 		t.Error("pager on a single page")
 	}
 }
+
+func TestRenewAll(t *testing.T) {
+	c := newCirc(t)
+	other := c.lib.addTitle("title", "Matilda")
+	c.lib.post(other+"/copies", titleValues("barcode", "M01"))
+	c.checkout("C01")
+	c.checkout("M01")
+	wantBody(t, c.member.get("/account"), "Renew all (2)")
+
+	wantRedirect(t, c.member.post("/account/renew-all", nil), "/account")
+	wantBody(t, c.member.get("/account"), "Renewed all 2 loans.")
+	loans, _ := c.env.store.ActiveLoans(t.Context(), c.mo.ID)
+	for _, l := range loans {
+		if l.Renewals != 1 {
+			t.Errorf("%s renewed %d times", l.Title, l.Renewals)
+		}
+	}
+
+	// Someone queues for Dune: only Matilda can be renewed now.
+	c.checkout("C02")
+	ana := c.env.member("Ana", "ana@example.com")
+	ana.post(c.title+"/hold", nil)
+	c.member.post("/account/renew-all", nil)
+	wantBody(t, c.member.get("/account"), "Renewed 1 of your 3 loans.")
+}

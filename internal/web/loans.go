@@ -148,3 +148,38 @@ func (s *Server) declareLost(w http.ResponseWriter, r *http.Request) {
 	s.setFlash(w, l.Title+" ("+l.Barcode+") is marked lost.")
 	http.Redirect(w, r, fmt.Sprintf("/members/%d", l.UserID), http.StatusSeeOther)
 }
+
+// renewAll renews every loan of the signed in member that can be renewed.
+func (s *Server) renewAll(w http.ResponseWriter, r *http.Request) {
+	u := currentUser(r)
+	loans, err := s.store.ActiveLoans(r.Context(), u.ID)
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	lines, err := s.loanLines(r, loans)
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	renewed := 0
+	for _, l := range lines {
+		if !l.CanRenew {
+			continue
+		}
+		if _, err := s.store.Renew(r.Context(), l.ID, s.today()); err != nil {
+			s.log.Warn("renew all: loan not renewed", "loan_id", l.ID, "err", err)
+			continue
+		}
+		renewed++
+	}
+	switch {
+	case renewed == 0:
+		s.setFlash(w, "Nothing could be renewed right now.")
+	case renewed < len(lines):
+		s.setFlash(w, fmt.Sprintf("Renewed %d of your %d loans. The others can't be renewed; see why below.", renewed, len(lines)))
+	default:
+		s.setFlash(w, fmt.Sprintf("Renewed all %d %s.", renewed, plural(renewed, "loan", "loans")))
+	}
+	http.Redirect(w, r, "/account", http.StatusSeeOther)
+}
