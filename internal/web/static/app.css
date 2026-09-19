@@ -464,3 +464,12 @@ code { white-space: nowrap; font-size: 0.92em; }
 .library-card .print-link { color: #fff; margin-left: 1rem; }
 
 .footer { max-width: 1040px; margin: 2rem auto 0; padding: 1rem 1.5rem 2rem; font-size: 0.85rem; border-top: 1px solid var(--border); }
+
+/* Printing a list (overdue, members, report) shouldn't print the
+   navigation, buttons and forms around it. */
+@media print {
+  .topbar, .footer, .skip-link, form, .button, button, .pager, .row-actions, aside { display: none !important; }
+  body, .container { background: #fff; color: #000; padding: 0; max-width: none; }
+  .table { font-size: 10pt; }
+  a { color: inherit; text-decoration: none; }
+}
