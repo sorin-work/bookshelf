@@ -75,7 +75,14 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() {
+		// Lets SQLite refresh its query planner statistics; cheap, and
+		// recommended before closing a long-lived connection.
+		if _, err := conn.ExecContext(context.Background(), `PRAGMA optimize`); err != nil {
+			log.Warn("optimise database", "err", err)
+		}
+		conn.Close()
+	}()
 
 	applied, err := db.Migrate(ctx, conn)
 	if err != nil {

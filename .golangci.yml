@@ -31,6 +31,7 @@ linters:
       locale: UK
       ignore-rules:
         - catalog
+        - optimize
   exclusions:
     presets:
       - std-error-handling
