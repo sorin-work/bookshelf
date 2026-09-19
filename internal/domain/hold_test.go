@@ -95,3 +95,22 @@ func TestHoldStatusOpen(t *testing.T) {
 		}
 	}
 }
+
+func TestEstimatedWait(t *testing.T) {
+	p := DefaultPolicy() // 21 day loans
+	tests := []struct {
+		position, copies, want int
+	}{
+		{1, 1, 21},
+		{2, 1, 42},
+		{2, 2, 21},
+		{3, 2, 42},
+		{0, 2, 0},
+		{1, 0, 0},
+	}
+	for _, tt := range tests {
+		if got := p.EstimatedWait(tt.position, tt.copies); got != tt.want {
+			t.Errorf("EstimatedWait(%d, %d) = %d, want %d", tt.position, tt.copies, got, tt.want)
+		}
+	}
+}

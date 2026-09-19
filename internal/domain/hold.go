@@ -113,3 +113,15 @@ func NextInQueue(q []QueuedHold) (QueuedHold, bool) {
 	SortQueue(sorted)
 	return sorted[0], true
 }
+
+// EstimatedWait guesses how many days a member at position in the queue
+// will wait, assuming loans run their full period and are not renewed:
+// each circulating copy serves one member per loan period. It returns 0
+// when there is nothing to estimate.
+func (p Policy) EstimatedWait(position, copies int) int {
+	if position <= 0 || copies <= 0 {
+		return 0
+	}
+	rounds := (position + copies - 1) / copies
+	return rounds * p.LoanDays
+}
