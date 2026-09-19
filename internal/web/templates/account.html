@@ -1,5 +1,8 @@
 {{define "content"}}
 <h1>Hello, {{.User.Name}}</h1>
+{{range .Data.Holds}}{{if eq .Status "ready"}}
+<p class="alert hold"><strong>{{.Title}}</strong> is waiting for you at the desk. Collect it by {{.ExpiresOn.Format "Monday 2 January"}}.</p>
+{{end}}{{end}}
 <div class="grid-2">
   <section class="card library-card">
     <p class="muted">Library card</p>
