@@ -16,14 +16,14 @@
       {{with .Data.Waiting}}<span class="muted">{{.}} waiting</span>{{end}}
     </p>
     {{with .Data.MyHold}}
-      <p class="alert hold">{{if eq .Status "ready"}}A copy is waiting for you at the desk until {{.ExpiresOn.Format "Monday 2 January"}}.{{else}}You're number {{.Position}} in the queue.{{end}}</p>
+      <p class="alert hold">{{if eq .Status "ready"}}A copy is waiting for you at the desk until {{.ExpiresOn.Format "Monday 2 January"}}.{{else}}You're number {{.Position}} in the queue{{with $.Data.WaitWeeks}}, which usually means about {{.}} {{if eq . 1}}week{{else}}weeks{{end}}{{end}}.{{end}}</p>
     {{else}}
       {{if .Data.CanHold}}
         <form method="post" action="/titles/{{$t.ID}}/hold" class="inline">
           {{template "csrf" $}}
           <button type="submit">Place a hold</button>
         </form>
-        <p class="hint">All copies are out. We'll set the next one that comes back aside for you.</p>
+        <p class="hint">All copies are out. We'll set the next one that comes back aside for you{{with .Data.WaitWeeks}}, probably within {{.}} {{if eq . 1}}week{{else}}weeks{{end}}{{end}}.</p>
       {{else if and (not $.User) (not .Data.Available) .Data.Circulating}}
         <p class="hint"><a href="/login?next=/titles/{{$t.ID}}">Log in</a> to place a hold.</p>
       {{end}}

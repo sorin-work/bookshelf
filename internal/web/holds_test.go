@@ -18,11 +18,11 @@ func TestHoldFlow(t *testing.T) {
 
 	c.checkout("C01")
 	c.checkout("C02")
-	wantBody(t, ana.get(c.title), "Place a hold", "All copies are out")
+	wantBody(t, ana.get(c.title), "Place a hold", "All copies are out", "probably within 3 weeks")
 
 	r = ana.post(c.title+"/hold", nil)
 	wantRedirect(t, r, c.title)
-	wantBody(t, ana.get(c.title), "number 1 in the queue")
+	wantBody(t, ana.get(c.title), "number 1 in the queue, which usually means about 3 weeks")
 	wantBody(t, ana.get("/account"), "Number 1 in the queue")
 	wantStatus(t, ana.post(c.title+"/hold", nil), http.StatusConflict)
 

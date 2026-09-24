@@ -25,6 +25,8 @@ type titleView struct {
 	MyHold *store.HoldRow
 	// CanHold says whether to offer the "place a hold" button.
 	CanHold bool
+	// WaitWeeks is a rough wait for a new hold, or for MyHold.
+	WaitWeeks int
 }
 
 type copyForm struct {
@@ -68,6 +70,18 @@ func (s *Server) loadTitleView(r *http.Request, id int64) (titleView, error) {
 		}
 	}
 	v.CanHold = user != nil && v.MyHold == nil && v.Available == 0 && v.Circulating > 0
+	if v.Available == 0 && v.Circulating > 0 {
+		policy, err := s.store.Policy(r.Context())
+		if err != nil {
+			return titleView{}, err
+		}
+		position := v.Waiting + 1
+		if v.MyHold != nil {
+			position = v.MyHold.Position
+		}
+		days := policy.EstimatedWait(position, v.Circulating)
+		v.WaitWeeks = (days + 6) / 7
+	}
 	if user != nil && user.IsLibrarian() {
 		if v.CopyForm.Suggested, err = s.store.SuggestBarcode(r.Context()); err != nil {
 			return titleView{}, err
