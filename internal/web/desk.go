@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/sorin-work/bookshelf/internal/domain"
 	"github.com/sorin-work/bookshelf/internal/store"
@@ -215,7 +216,7 @@ func (s *Server) deskReturn(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, store.ErrNotFound):
 		d.Result = &deskResult{Message: "No copy has barcode " + barcode + "."}
 	case errors.Is(err, store.ErrNotOnLoan):
-		d.Result = &deskResult{Message: "Copy " + barcode + " wasn't checked out. It can go straight back on the shelf."}
+		d.Result = &deskResult{Message: s.notOnLoanMessage(r, barcode)}
 	case err != nil:
 		s.serverError(w, r, err)
 		return
@@ -243,4 +244,32 @@ func plural(n int, one, many string) string {
 		return one
 	}
 	return many
+}
+
+// notOnLoanMessage says where a copy that was handed in but isn't on loan
+// belongs.
+func (s *Server) notOnLoanMessage(r *http.Request, barcode string) string {
+	c, err := s.store.CopyByBarcode(r.Context(), barcode)
+	if err == nil {
+		switch c.Status {
+		case domain.CopyOnHoldShelf:
+			for _, h := range s.holdShelfOrNil(r) {
+				if h.CopyID == c.ID {
+					return "Copy " + barcode + " is waiting on the hold shelf for " + h.MemberName + ". Keep it there."
+				}
+			}
+		case domain.CopyLost, domain.CopyWithdrawn:
+			return "Copy " + barcode + " is marked " + strings.ToLower(c.Status.Label()) + ". Put it back on the shelf from its title page if it's turned up."
+		}
+	}
+	return "Copy " + barcode + " wasn't checked out. It can go straight back on the shelf."
+}
+
+func (s *Server) holdShelfOrNil(r *http.Request) []store.HoldRow {
+	shelf, err := s.store.HoldShelf(r.Context())
+	if err != nil {
+		s.log.Warn("load hold shelf", "err", err)
+		return nil
+	}
+	return shelf
 }

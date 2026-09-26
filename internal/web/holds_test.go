@@ -34,6 +34,8 @@ func TestHoldFlow(t *testing.T) {
 	wantBody(t, r, "Put this copy on the hold shelf", "Ana Reader")
 	wantBody(t, ana.get("/account"), "Ready at the desk")
 	wantBody(t, c.lib.get("/holds"), "C02", "Ana Reader")
+	// Scanning it again by mistake doesn't send it back to the shelf.
+	wantBody(t, c.lib.post("/desk/return", titleValues("barcode", "C02")), "waiting on the hold shelf for Ana Reader")
 
 	// Mo can't borrow it again; Ana can.
 	r = c.checkout("C02")
