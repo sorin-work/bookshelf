@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/sorin-work/bookshelf/internal/domain"
 )
 
 type Title struct {
@@ -54,9 +56,9 @@ func (s *Store) CreateTitle(ctx context.Context, in TitleInput, now time.Time) (
 	defer func() { _ = tx.Rollback() }()
 
 	res, err := tx.ExecContext(ctx, `INSERT INTO titles
-		(isbn, title, subtitle, publisher, year, description, cover_url, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		nullString(in.ISBN), in.Title, in.Subtitle, in.Publisher, nullInt(in.Year),
+		(isbn, title, sort_title, subtitle, publisher, year, description, cover_url, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		nullString(in.ISBN), in.Title, domain.SortTitle(in.Title), in.Subtitle, in.Publisher, nullInt(in.Year),
 		in.Description, in.CoverURL, fmtTime(now), fmtTime(now))
 	if err != nil {
 		if isUniqueViolation(err) {
@@ -85,10 +87,10 @@ func (s *Store) UpdateTitle(ctx context.Context, id int64, in TitleInput, now ti
 	defer func() { _ = tx.Rollback() }()
 
 	res, err := tx.ExecContext(ctx, `UPDATE titles SET
-		isbn = ?, title = ?, subtitle = ?, publisher = ?, year = ?, description = ?,
+		isbn = ?, title = ?, sort_title = ?, subtitle = ?, publisher = ?, year = ?, description = ?,
 		cover_url = ?, updated_at = ?
 		WHERE id = ?`,
-		nullString(in.ISBN), in.Title, in.Subtitle, in.Publisher, nullInt(in.Year),
+		nullString(in.ISBN), in.Title, domain.SortTitle(in.Title), in.Subtitle, in.Publisher, nullInt(in.Year),
 		in.Description, in.CoverURL, fmtTime(now), id)
 	if err != nil {
 		if isUniqueViolation(err) {
@@ -270,7 +272,7 @@ func (s *Store) ListTitles(ctx context.Context, f TitleFilter) ([]TitleSummary, 
 		(SELECT count(*) FROM copies c WHERE c.title_id = t.id AND c.status NOT IN ('lost', 'withdrawn')),
 		(SELECT count(*) FROM copies c WHERE c.title_id = t.id AND c.status = 'available')
 		FROM titles t `+where+`
-		ORDER BY t.title COLLATE NOCASE, t.id
+		ORDER BY t.sort_title, t.id
 		LIMIT ? OFFSET ?`, append(args, f.Limit, f.Offset)...)
 	if err != nil {
 		return nil, 0, err
@@ -354,7 +356,7 @@ type ExportRow struct {
 // ExportCatalogue returns every title with the barcodes of its copies that
 // are still in the collection (not withdrawn), sorted by title.
 func (s *Store) ExportCatalogue(ctx context.Context) ([]ExportRow, error) {
-	ids, err := s.ids(ctx, `SELECT id FROM titles ORDER BY title COLLATE NOCASE, id`)
+	ids, err := s.ids(ctx, `SELECT id FROM titles ORDER BY sort_title, id`)
 	if err != nil {
 		return nil, err
 	}

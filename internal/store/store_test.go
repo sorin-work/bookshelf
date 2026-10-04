@@ -102,12 +102,12 @@ func TestListTitlesSearch(t *testing.T) {
 		q    string
 		want []string
 	}{
-		{"", []string{"100% Wolf", "Matilda", "Snake_case for Beginners", "The BFG", "The Hobbit"}},
+		{"", []string{"100% Wolf", "The BFG", "The Hobbit", "Matilda", "Snake_case for Beginners"}},
 		{"%", []string{"100% Wolf"}},
 		{"0% w", []string{"100% Wolf"}},
 		{"_", []string{"Snake_case for Beginners"}},
 		{`\`, nil},
-		{"dahl", []string{"Matilda", "The BFG"}},
+		{"dahl", []string{"The BFG", "Matilda"}},
 		{"hobb", []string{"The Hobbit"}},
 		{"nothing like it", nil},
 	}
