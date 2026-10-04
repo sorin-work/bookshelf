@@ -237,3 +237,17 @@ func TestCataloguePagePastTheEnd(t *testing.T) {
 		t.Error("said the catalogue was empty")
 	}
 }
+
+func TestNewArrivalsOnHomePage(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	loc := lib.addTitle("title", "Matilda", "authors", "Roald Dahl")
+	lib.addTitle("title", "No Copies Yet")
+	lib.post(loc+"/copies", titleValues("barcode", "M-01"))
+
+	r := env.client().get("/")
+	wantBody(t, r, "New on the shelves", "Matilda")
+	if strings.Contains(r.body, "No Copies Yet") {
+		t.Error("a title without copies is listed as a new arrival")
+	}
+}

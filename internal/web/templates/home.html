@@ -9,4 +9,20 @@
     <button type="submit">Search</button>
   </form>
 </section>
+{{if .Data}}
+<section>
+  <h2>New on the shelves</h2>
+  <ul class="arrivals">
+    {{range .Data}}
+    <li>
+      <a href="/titles/{{.ID}}">
+        <span class="thumb big">{{if .CoverURL}}<img src="{{.CoverURL}}" alt="" loading="lazy">{{end}}</span>
+        <span class="arrival-title">{{.Title}}</span>
+      </a>
+      <span class="muted">{{.Authors}}</span>
+    </li>
+    {{end}}
+  </ul>
+</section>
+{{end}}
 {{end}}

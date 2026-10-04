@@ -108,5 +108,10 @@ func (s *Server) home(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 		return
 	}
-	s.render(w, r, http.StatusOK, "home.html", page{Title: "Welcome"})
+	arrivals, err := s.store.NewArrivals(r.Context(), 8)
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	s.render(w, r, http.StatusOK, "home.html", page{Title: "Welcome", Data: arrivals})
 }

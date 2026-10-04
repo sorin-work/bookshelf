@@ -372,3 +372,23 @@ func (s *Store) ExportCatalogue(ctx context.Context) ([]ExportRow, error) {
 	}
 	return out, nil
 }
+
+// NewArrivals returns the titles added most recently that have a copy.
+func (s *Store) NewArrivals(ctx context.Context, limit int) ([]TitleSummary, error) {
+	ids, err := s.ids(ctx, `SELECT t.id FROM titles t
+		WHERE EXISTS (SELECT 1 FROM copies c WHERE c.title_id = t.id AND c.status NOT IN ('lost', 'withdrawn'))
+		ORDER BY t.created_at DESC, t.id DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]TitleSummary, 0, len(ids))
+	for _, id := range ids {
+		t, err := s.TitleByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, TitleSummary{ID: t.ID, Title: t.Title, Subtitle: t.Subtitle,
+			Authors: strings.Join(t.Authors, ", "), Year: t.Year, CoverURL: t.CoverURL})
+	}
+	return out, nil
+}
