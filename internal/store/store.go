@@ -6,7 +6,10 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/sorin-work/bookshelf/internal/domain"
 )
 
 var (
@@ -24,6 +27,9 @@ type querier interface {
 
 type Store struct {
 	db *sql.DB
+
+	policyMu sync.Mutex
+	policy   *domain.Policy
 }
 
 func New(db *sql.DB) *Store {

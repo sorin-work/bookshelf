@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/sorin-work/bookshelf/internal/domain"
 )
@@ -247,5 +248,23 @@ func TestDeclareLost(t *testing.T) {
 	}
 	if _, err := f.s.DeclareLost(ctx, l.ID, 0, now); !errors.Is(err, ErrNotOnLoan) {
 		t.Errorf("declared lost twice: %v", err)
+	}
+}
+
+func TestPolicyCacheIsCopied(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	p, _ := s.Policy(ctx)
+	p.ClosedDays[0] = time.Monday
+	again, _ := s.Policy(ctx)
+	if again.ClosedDays[0] != time.Sunday {
+		t.Error("changing a returned policy changed the cache")
+	}
+	p.LoanDays = 7
+	if err := s.SavePolicy(ctx, p); err != nil {
+		t.Fatal(err)
+	}
+	if again, _ = s.Policy(ctx); again.LoanDays != 7 {
+		t.Errorf("cache not refreshed after saving: %d", again.LoanDays)
 	}
 }
