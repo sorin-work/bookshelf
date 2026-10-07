@@ -98,3 +98,16 @@ func TestClosureDatesMoveDueDates(t *testing.T) {
 	wantBody(t, c.checkout("C01"), "Due Thu 2 Apr")
 	wantBody(t, c.lib.get("/settings"), "2026-03-31\n2026-04-01")
 }
+
+func TestRulesPage(t *testing.T) {
+	env := newTestEnv(t)
+	r := env.client().get("/rules")
+	wantStatus(t, r, http.StatusOK)
+	wantBody(t, r, "up to <strong>5</strong> items", "<strong>21 days</strong>", "closed on Sundays",
+		"<strong>€0.25</strong> a day, never more than\n     €5.00 per item", "If you owe €10.00 or more")
+
+	lib := env.librarian()
+	lib.post("/settings", settingsForm("max_holds", "0", "max_renewals", "0", "fine_per_day", "0", "closed_dates", "2026-12-25"))
+	r = env.client().get("/rules")
+	wantBody(t, r, "We don't take holds", "Loans can't be renewed", "We don't charge", "25 December")
+}

@@ -1,0 +1,28 @@
+{{define "content"}}
+{{$p := .Data.Policy}}
+<article class="narrow wide prose">
+  <h1>How borrowing works</h1>
+  <h2>Borrowing</h2>
+  <p>You can have up to <strong>{{$p.MaxLoans}}</strong> {{if eq $p.MaxLoans 1}}item{{else}}items{{end}} out at a time,
+     each for <strong>{{$p.LoanDays}} days</strong>. Bring your library card to the desk.</p>
+  {{if .Data.ClosedDays}}<p>We're closed on {{range $i, $d := .Data.ClosedDays}}{{if $i}} and {{end}}{{$d}}{{end}}, so nothing is ever due back then.</p>{{end}}
+  {{with .Data.ClosedDates}}<p>We're also closed on {{range $i, $d := .}}{{if $i}}, {{end}}{{$d.Format "2 January"}}{{end}}.</p>{{end}}
+  <h2>Renewing</h2>
+  {{if $p.MaxRenewals}}
+  <p>You can renew each loan {{if eq $p.MaxRenewals 1}}once{{else}}up to {{$p.MaxRenewals}} times{{end}} from
+     <a href="/account">your account</a>, unless it's overdue or someone else is waiting for it.</p>
+  {{else}}<p>Loans can't be renewed. Return the book and borrow it again if nobody is waiting.</p>{{end}}
+  <h2>Holds</h2>
+  {{if $p.MaxHolds}}
+  <p>When every copy of a book is out you can place a hold from its page and join the queue. The first member in the
+     queue gets the next copy that comes back; we keep it at the desk for <strong>{{$p.HoldPickupDays}} days</strong>.
+     You can have up to {{$p.MaxHolds}} holds at once.</p>
+  {{else}}<p>We don't take holds at the moment.</p>{{end}}
+  <h2>Late returns</h2>
+  {{if $p.FinePerDay}}
+  <p>A late item costs <strong>{{money $p.FinePerDay $p.Currency}}</strong> a day{{if $p.FineCap}}, never more than
+     {{money $p.FineCap $p.Currency}} per item{{end}}.{{with $p.FineGraceDays}} Items up to {{.}} {{if eq . 1}}day{{else}}days{{end}} late cost nothing.{{end}}</p>
+  {{if $p.BlockAt}}<p>If you owe {{money $p.BlockAt $p.Currency}} or more you can't borrow until you've paid at the desk.</p>{{end}}
+  {{else}}<p>We don't charge for late returns, but please bring things back so others can read them.</p>{{end}}
+</article>
+{{end}}

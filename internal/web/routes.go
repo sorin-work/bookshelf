@@ -39,6 +39,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /account/password", s.requireUser(s.passwordPage))
 	mux.HandleFunc("POST /account/password", s.requireUser(s.changePassword))
 	mux.HandleFunc("GET /catalogue", s.catalogue)
+	mux.HandleFunc("GET /rules", s.rules)
 	mux.HandleFunc("GET /titles/new", s.requireLibrarian(s.newTitlePage))
 	mux.HandleFunc("POST /titles", s.requireLibrarian(s.createTitle))
 	mux.HandleFunc("GET /titles/lookup", s.requireLibrarian(s.lookupTitle))
