@@ -34,6 +34,40 @@ The first account created becomes the librarian. The rules for due dates,
 renewals, holds and fines are described in
 [docs/lending-rules.md](docs/lending-rules.md).
 
+## Architecture
+
+One Go binary serves server-rendered HTML; there is no separate frontend
+build. Pages are `html/template` files embedded in the binary, and
+[htmx](https://htmx.org) swaps in fragments where a full page load would
+get in the way: search as you type, the circulation desk, renewing a loan
+or cancelling a hold in place. Everything still works as plain forms
+without JavaScript.
+
+Data lives in a single SQLite file, opened with the pure Go
+[modernc.org/sqlite](https://pkg.go.dev/modernc.org/sqlite) driver (no
+cgo). Migrations are numbered `.sql` files embedded in the binary and run
+on start.
+
+```
+cmd/bookshelf          main: config, database, background jobs, HTTP server
+internal/config        settings from environment variables
+internal/db            opening SQLite, migrations, backups
+internal/domain        lending rules with no database: ISBNs, card numbers,
+                       dates, due dates, renewals, holds, fines
+internal/store         SQL for every table; checkout, return, renewal and
+                       holds run in transactions
+internal/web           handlers, middleware, sessions, CSRF, templates,
+                       static files
+internal/seed          the demo library
+internal/openlibrary   ISBN lookups
+```
+
+Logins are session cookies backed by a `sessions` table (only a hash of
+the token is stored); passwords are hashed with bcrypt. Every form and
+htmx request carries a CSRF token, and cross-site posts are also refused
+by fetch metadata. An hourly job expires uncollected holds and old
+sessions. Logs are structured with `log/slog`.
+
 ## Running it
 
 With Docker:
@@ -82,8 +116,13 @@ docker compose exec app bookshelf backup /data/backup-$(date +%F).db
 | `LOG_LEVEL`        | `info`         | `debug`, `info`, `warn` or `error`                   |
 | `LOG_FORMAT`       | `json`         | `json` or `text`                                     |
 
-## Tests
+## Tests and linting
 
 ```sh
-go test ./...
+go test ./...            # unit tests and handler tests against a temporary SQLite file
+go vet ./...
+golangci-lint run ./...
 ```
+
+The domain rules have table-driven tests; the handler tests start the
+real router with `httptest` against a fresh database for each test.
