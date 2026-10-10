@@ -58,6 +58,9 @@ func Demo(ctx context.Context, st *store.Store, o Options) error {
 		today: domain.DateOf(o.Now.In(o.Location)),
 	}
 	start := s.today.AddDays(-o.Days)
+	if err := s.closures(start); err != nil {
+		return fmt.Errorf("closures: %w", err)
+	}
 	if err := s.accounts(start); err != nil {
 		return fmt.Errorf("accounts: %w", err)
 	}
@@ -105,6 +108,29 @@ func (s *seeder) at(d domain.Date) time.Time {
 		return now
 	}
 	return t
+}
+
+// closures gives the demo library a few holidays: the week around
+// Christmas and New Year, whichever falls in or just after the history.
+func (s *seeder) closures(start domain.Date) error {
+	p, err := s.st.Policy(s.ctx)
+	if err != nil {
+		return err
+	}
+	for year := start.Year; year <= s.today.Year+1; year++ {
+		for _, d := range []domain.Date{
+			{Year: year, Month: time.December, Day: 24},
+			{Year: year, Month: time.December, Day: 25},
+			{Year: year, Month: time.December, Day: 26},
+			{Year: year, Month: time.December, Day: 31},
+			{Year: year + 1, Month: time.January, Day: 1},
+		} {
+			if !d.Before(start) && len(p.ClosedDates) < domain.MaxClosedDates {
+				p.ClosedDates = append(p.ClosedDates, d)
+			}
+		}
+	}
+	return s.st.SavePolicy(s.ctx, p)
 }
 
 func (s *seeder) accounts(start domain.Date) error {
@@ -313,8 +339,30 @@ func (s *seeder) payFines(d domain.Date) error {
 	return nil
 }
 
-// finishing makes sure the member demo account has something to look at.
+// finishing adds the odd things a real library has (a copy lost on loan,
+// a member who moved away) and makes sure the member demo account has
+// something to look at.
 func (s *seeder) finishing() error {
+	ids := make([]int64, 0, len(s.loans))
+	for id := range s.loans {
+		ids = append(ids, id)
+	}
+	slices.Sort(ids)
+	for _, id := range ids {
+		if s.loans[id].userID == s.sam.ID {
+			continue
+		}
+		if _, err := s.st.DeclareLost(s.ctx, id, 1200, s.at(s.today.AddDays(-3))); err != nil {
+			return err
+		}
+		delete(s.loans, id)
+		break
+	}
+	moved := s.members[len(s.members)-1]
+	if err := s.st.SetActive(s.ctx, moved.ID, false, s.today, s.o.Now); err != nil && !errors.Is(err, store.ErrHasLoans) {
+		return err
+	}
+
 	holds, err := s.st.OpenHolds(s.ctx, s.sam.ID)
 	if err != nil {
 		return err
@@ -322,6 +370,10 @@ func (s *seeder) finishing() error {
 	if len(holds) > 0 {
 		return nil
 	}
+	return s.holdForSam()
+}
+
+func (s *seeder) holdForSam() error {
 	for _, barcode := range s.barcodes {
 		c, err := s.st.CopyByBarcode(s.ctx, barcode)
 		if err != nil {
