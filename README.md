@@ -80,7 +80,7 @@ Then open http://localhost:4409. The compose file loads demo data:
 log in as `demo@example.com` / `demo-password` (librarian) or
 `member@example.com` / `demo-password` (member).
 
-Without Docker you need Go 1.25 or newer:
+Without Docker you need Go 1.26 or newer:
 
 ```sh
 SEED_DEMO=true go run ./cmd/bookshelf
