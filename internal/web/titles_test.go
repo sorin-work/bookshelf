@@ -216,6 +216,8 @@ func TestLookupTitle(t *testing.T) {
 	lib := env.librarian()
 
 	wantBody(t, lib.get("/titles/new"), "Fill in from Open Library")
+	// Still there after a validation error.
+	wantBody(t, lib.post("/titles", titleValues("isbn", "9780441172719")), "A title is required.", "Fill in from Open Library")
 
 	r := lib.get("/titles/lookup?isbn=0-441-17271-7&publisher=My+own+edition")
 	wantStatus(t, r, http.StatusOK)

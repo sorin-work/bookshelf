@@ -204,6 +204,7 @@ func (s *Server) lookupTitle(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) createTitle(w http.ResponseWriter, r *http.Request) {
 	in, f := parseTitleForm(r, s.now().Year())
+	f.Lookup = s.books != nil
 	if f.Errors.any() {
 		s.render(w, r, http.StatusUnprocessableEntity, "title_form.html", page{Title: "Add a title", Data: f})
 		return
