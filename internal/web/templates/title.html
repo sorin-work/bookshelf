@@ -32,6 +32,7 @@
       {{with $t.ISBN}}<dt>ISBN</dt><dd>{{.}}</dd>{{end}}
       {{with $t.Publisher}}<dt>Publisher</dt><dd>{{.}}</dd>{{end}}
       {{with $t.Year}}<dt>Year</dt><dd>{{.}}</dd>{{end}}
+      {{if and $.User $.User.IsLibrarian}}<dt>Borrowed</dt><dd>{{$t.Loans}} {{if eq $t.Loans 1}}time{{else}}times{{end}}</dd>{{end}}
       {{if $t.Subjects}}<dt>Subjects</dt><dd>{{range $i, $s := $t.Subjects}}{{if $i}}, {{end}}<a href="/catalogue?subject={{$s}}">{{$s}}</a>{{end}}</dd>{{end}}
     </dl>
     {{with $t.Description}}<p class="description">{{.}}</p>{{end}}

@@ -22,8 +22,10 @@ type Title struct {
 	CoverURL    string
 	Authors     []string
 	Subjects    []string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	// Loans is how many times any copy has been borrowed.
+	Loans     int
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // TitleInput is what a librarian fills in. The ISBN must already be
@@ -160,9 +162,11 @@ func (s *Store) TitleByID(ctx context.Context, id int64) (Title, error) {
 	var year sql.NullInt64
 	var created, updated string
 	err := s.db.QueryRowContext(ctx, `SELECT id, isbn, title, subtitle, publisher, year,
-		description, cover_url, created_at, updated_at FROM titles WHERE id = ?`, id).
+		description, cover_url, created_at, updated_at,
+		(SELECT count(*) FROM loans l JOIN copies c ON c.id = l.copy_id WHERE c.title_id = titles.id)
+		FROM titles WHERE id = ?`, id).
 		Scan(&t.ID, &isbn, &t.Title, &t.Subtitle, &t.Publisher, &year,
-			&t.Description, &t.CoverURL, &created, &updated)
+			&t.Description, &t.CoverURL, &created, &updated, &t.Loans)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Title{}, ErrNotFound
 	}
