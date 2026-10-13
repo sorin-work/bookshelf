@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 var ErrFinesOwed = errors.New("the member owes more in fines than the library allows while borrowing")
@@ -26,15 +27,33 @@ func (p Policy) LateFine(due, returned Date) int {
 	return fine
 }
 
-// FormatMoney prints cents as an amount with the policy's currency symbol:
-// €1.25, -€0.50.
+// FormatMoney prints cents as an amount with the policy's currency:
+// €1.25, -€0.50. Currencies written as letters go after the amount, the
+// way they are written locally: 1.25 lei, 3.00 kr.
 func (p Policy) FormatMoney(cents int) string {
 	sign := ""
 	if cents < 0 {
 		sign = "-"
 		cents = -cents
 	}
-	return fmt.Sprintf("%s%s%d.%02d", sign, p.Currency, cents/100, cents%100)
+	amount := fmt.Sprintf("%d.%02d", cents/100, cents%100)
+	if currencyAfter(p.Currency) {
+		return sign + amount + " " + p.Currency
+	}
+	return sign + p.Currency + amount
+}
+
+// currencyAfter reports whether a currency is a word rather than a
+// symbol: two or more letters.
+func currencyAfter(c string) bool {
+	letters := 0
+	for _, r := range c {
+		if !unicode.IsLetter(r) {
+			return false
+		}
+		letters++
+	}
+	return letters >= 2
 }
 
 // ParseMoney reads an amount typed into a form ("2", "2.5", "2,50") as

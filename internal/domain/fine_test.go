@@ -74,6 +74,18 @@ func TestFormatMoney(t *testing.T) {
 			t.Errorf("FormatMoney(%d) = %q, want %q", tt.cents, got, tt.want)
 		}
 	}
+
+	for currency, want := range map[string]string{
+		"lei": "12.50 lei",
+		"kr":  "12.50 kr",
+		"$":   "$12.50",
+		"R$":  "R$12.50",
+		"":    "12.50",
+	} {
+		if got := (Policy{Currency: currency}).FormatMoney(1250); got != want {
+			t.Errorf("FormatMoney with %q = %q, want %q", currency, got, want)
+		}
+	}
 }
 
 func TestParseMoney(t *testing.T) {
