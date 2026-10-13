@@ -158,3 +158,7 @@ func (s *Store) SetPassword(ctx context.Context, userID int64, hash, keepSession
 		return err
 	})
 }
+
+func isForeignKeyViolation(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "FOREIGN KEY constraint failed")
+}

@@ -45,6 +45,9 @@ func (s *Store) CreateCopy(ctx context.Context, titleID int64, in CopyInput, now
 		if isUniqueViolation(err) {
 			return Copy{}, ErrConflict
 		}
+		if isForeignKeyViolation(err) {
+			return Copy{}, ErrNotFound
+		}
 		return Copy{}, fmt.Errorf("insert copy: %w", err)
 	}
 	id, err := res.LastInsertId()

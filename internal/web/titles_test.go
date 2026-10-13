@@ -114,6 +114,8 @@ func TestCopies(t *testing.T) {
 
 	wantBody(t, lib.get(loc), `name="barcode" value="B-0003"`)
 
+	wantStatus(t, lib.post("/titles/999/copies", titleValues("barcode", "X-0001")), http.StatusNotFound)
+
 	r := lib.post(loc+"/copies", titleValues("barcode", "b-0001"))
 	wantStatus(t, r, http.StatusUnprocessableEntity)
 	wantBody(t, r, "Another copy already has this barcode.")

@@ -116,6 +116,9 @@ func (s *Server) addCopy(w http.ResponseWriter, r *http.Request) {
 	if !f.Errors.any() {
 		_, err = s.store.CreateCopy(r.Context(), id, store.CopyInput{Barcode: barcode, Shelf: f.Shelf, Note: f.Note}, s.now())
 		switch {
+		case errors.Is(err, store.ErrNotFound):
+			s.notFound(w, r)
+			return
 		case errors.Is(err, store.ErrConflict):
 			f.Errors["barcode"] = "Another copy already has this barcode."
 		case err != nil:
