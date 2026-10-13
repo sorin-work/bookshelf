@@ -2,6 +2,7 @@ package web
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/sorin-work/bookshelf/internal/domain"
@@ -134,4 +135,20 @@ func TestPrintCard(t *testing.T) {
 	wantStatus(t, r, http.StatusOK)
 	wantBody(t, r, mo.FormattedCard(), "Valid until 10 Mar 2027", "Bookshelf")
 	wantStatus(t, m.get("/members/"+itoa(mo.ID)+"/card"), http.StatusForbidden)
+}
+
+func TestUserInputIsEscaped(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	r := lib.post("/members", titleValues("name", `<script>alert("hi")</script>`, "email", "x@example.com"))
+	page := lib.get(r.location)
+	if strings.Contains(page.body, "<script>alert") {
+		t.Error("member name rendered unescaped")
+	}
+	wantBody(t, page, "&lt;script&gt;alert(&#34;hi&#34;)&lt;/script&gt;")
+
+	loc := lib.addTitle("title", `Dune"><img src=x onerror=alert(1)>`)
+	if strings.Contains(lib.get(loc).body, "<img src=x") {
+		t.Error("title rendered unescaped")
+	}
 }
