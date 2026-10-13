@@ -1,7 +1,7 @@
 {{define "content"}}
 <h1>Circulation desk</h1>
 <div id="desk-result" aria-live="polite">{{template "desk_result" .}}</div>
-<div class="grid-2">
+<div class="grid-2 desk-grid">
   <form method="post" action="/desk/checkout" class="card"
         hx-post="/desk/checkout" hx-target="#desk-result" data-scan>
     {{template "csrf" .}}
@@ -27,6 +27,16 @@
       <input id="return-barcode" name="barcode" autocomplete="off" required>
     </div>
     <button type="submit">Check in</button>
+  </form>
+  <form method="post" action="/desk/renew" class="card"
+        hx-post="/desk/renew" hx-target="#desk-result" data-scan>
+    {{template "csrf" .}}
+    <h2>Renew</h2>
+    <div class="field">
+      <label for="renew-barcode">Copy barcode</label>
+      <input id="renew-barcode" name="barcode" autocomplete="off" required>
+    </div>
+    <button type="submit" class="secondary">Renew</button>
   </form>
 </div>
 {{end}}

@@ -273,3 +273,35 @@ func (s *Server) holdShelfOrNil(r *http.Request) []store.HoldRow {
 	}
 	return shelf
 }
+
+// deskRenew renews the loan of a copy a member brings to the desk (or
+// phones about) without checking it in.
+func (s *Server) deskRenew(w http.ResponseWriter, r *http.Request) {
+	d := deskPage{}
+	barcode, err := domain.NormalizeBarcode(r.PostFormValue("barcode"))
+	if err != nil {
+		d.Result = &deskResult{Message: "Scan or type the barcode on the back of the book."}
+		s.deskRespond(w, r, d)
+		return
+	}
+	l, err := s.store.OpenLoanByBarcode(r.Context(), barcode)
+	if err == nil {
+		l, err = s.store.Renew(r.Context(), l.ID, s.today())
+	}
+	switch {
+	case errors.Is(err, store.ErrNotFound):
+		d.Result = &deskResult{Message: "No copy has barcode " + barcode + "."}
+	case errors.Is(err, store.ErrNotOnLoan):
+		d.Result = &deskResult{Message: "Copy " + barcode + " isn't checked out, so there's nothing to renew."}
+	case errors.Is(err, domain.ErrRenewalLimit), errors.Is(err, domain.ErrRenewOverdue),
+		errors.Is(err, domain.ErrRenewHeld), errors.Is(err, domain.ErrCardExpired):
+		d.Result = &deskResult{Message: "Can't renew " + barcode + ": " + strings.ToLower(renewalMessage(err)) + "."}
+	case err != nil:
+		s.serverError(w, r, err)
+		return
+	default:
+		s.log.Info("renewed at the desk", "loan_id", l.ID, "copy", barcode)
+		d.Result = &deskResult{OK: true, Message: fmt.Sprintf("%s renewed for %s.", l.Title, l.MemberName), Loan: &l}
+	}
+	s.deskRespond(w, r, d)
+}

@@ -254,3 +254,16 @@ func TestRenewAll(t *testing.T) {
 	c.member.post("/account/renew-all", nil)
 	wantBody(t, c.member.get("/account"), "Renewed 1 of your 3 loans.")
 }
+
+func TestDeskRenew(t *testing.T) {
+	c := newCirc(t)
+	wantBody(t, c.lib.post("/desk/renew", titleValues("barcode", "C01")), "isn&#39;t checked out")
+	wantBody(t, c.lib.post("/desk/renew", titleValues("barcode", "ZZZ")), "No copy has barcode ZZZ")
+	c.checkout("C01")
+	c.env.now = c.env.now.AddDate(0, 0, 20)
+	r := c.lib.post("/desk/renew", titleValues("barcode", "c01"))
+	wantStatus(t, r, http.StatusOK)
+	wantBody(t, r, "Dune renewed for Mo Member.", "Due Mon 20 Apr")
+	c.lib.post("/desk/renew", titleValues("barcode", "C01"))
+	wantBody(t, c.lib.post("/desk/renew", titleValues("barcode", "C01")), "renewed the maximum number of times")
+}

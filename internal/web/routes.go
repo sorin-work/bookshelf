@@ -66,6 +66,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /desk/member", s.requireLibrarian(s.deskMember))
 	mux.HandleFunc("POST /desk/checkout", s.requireLibrarian(s.deskCheckout))
 	mux.HandleFunc("POST /desk/return", s.requireLibrarian(s.deskReturn))
+	mux.HandleFunc("POST /desk/renew", s.requireLibrarian(s.deskRenew))
 	mux.HandleFunc("POST /loans/{id}/renew", s.requireUser(s.renewLoan))
 	mux.HandleFunc("POST /loans/{id}/lost", s.requireLibrarian(s.declareLost))
 

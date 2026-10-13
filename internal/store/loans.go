@@ -134,3 +134,15 @@ func (s *Store) OverdueLoans(ctx context.Context, today domain.Date) ([]LoanRow,
 	return queryLoans(ctx, s.db, `WHERE l.returned_at IS NULL AND l.due_on < ?
 		ORDER BY l.due_on, u.name COLLATE NOCASE`, today.String())
 }
+
+// OpenLoanByBarcode returns the open loan of the copy with this barcode.
+func (s *Store) OpenLoanByBarcode(ctx context.Context, barcode string) (LoanRow, error) {
+	l, err := scanLoan(s.db.QueryRowContext(ctx, loanSelect+`WHERE c.barcode = ? AND l.returned_at IS NULL`, barcode))
+	if errors.Is(err, ErrNotFound) {
+		if _, err := s.CopyByBarcode(ctx, barcode); err != nil {
+			return LoanRow{}, err
+		}
+		return LoanRow{}, ErrNotOnLoan
+	}
+	return l, err
+}
