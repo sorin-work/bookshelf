@@ -61,7 +61,7 @@ func TestTitlesRoundTrip(t *testing.T) {
 		t.Errorf("duplicate isbn: %v", err)
 	}
 	// Books without an ISBN don't clash with each other.
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		if _, err := s.CreateTitle(ctx, TitleInput{Title: "Parish newsletter"}, now); err != nil {
 			t.Errorf("title without isbn: %v", err)
 		}

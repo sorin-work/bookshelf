@@ -9,7 +9,7 @@ func TestLoginLimiter(t *testing.T) {
 	l := newLoginLimiter(3, 10*time.Minute)
 	start := time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if !l.Allowed("a@example.com", start) {
 			t.Fatalf("blocked after %d failures", i)
 		}

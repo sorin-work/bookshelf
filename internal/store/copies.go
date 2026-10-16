@@ -185,7 +185,7 @@ func (s *Store) SuggestBarcode(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		next := domain.NextBarcode(last)
 		if next == "" {
 			return "", nil

@@ -7,6 +7,8 @@ linters:
   enable:
     - bodyclose
     - errorlint
+    - intrange
+    - copyloopvar
     - gocritic
     - misspell
     - nilerr

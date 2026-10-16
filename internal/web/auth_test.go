@@ -146,7 +146,7 @@ func TestLoginThrottling(t *testing.T) {
 	env := newTestEnv(t)
 	env.client().signup("Ana", "ana@example.com", "long enough")
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		wantStatus(t, env.client().login("ana@example.com", "guess"), http.StatusUnauthorized)
 	}
 	// Even the right password is refused while throttled.

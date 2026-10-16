@@ -69,7 +69,7 @@ func stripISBN(s string) string {
 
 func checkISBN10(d string) error {
 	sum := 0
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		c := d[i]
 		var v int
 		switch {
@@ -89,7 +89,7 @@ func checkISBN10(d string) error {
 }
 
 func checkISBN13(d string) error {
-	for i := 0; i < 13; i++ {
+	for i := range 13 {
 		if d[i] < '0' || d[i] > '9' {
 			return ErrISBNChars
 		}
@@ -107,7 +107,7 @@ func checkISBN13(d string) error {
 // ISBN-13 (weights alternate 1 and 3).
 func isbn13CheckDigit(first12 string) byte {
 	sum := 0
-	for i := 0; i < 12; i++ {
+	for i := range 12 {
 		v := int(first12[i] - '0')
 		if i%2 == 1 {
 			v *= 3
@@ -132,7 +132,7 @@ func ISBN13To10(isbn13 string) string {
 	}
 	core := isbn13[3:12]
 	sum := 0
-	for i := 0; i < 9; i++ {
+	for i := range 9 {
 		sum += int(core[i]-'0') * (10 - i)
 	}
 	check := (11 - sum%11) % 11

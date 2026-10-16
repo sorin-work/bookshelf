@@ -192,7 +192,7 @@ func (s *seeder) catalogue(start domain.Date) error {
 		if err != nil {
 			return fmt.Errorf("%s: %w", b.title, err)
 		}
-		for i := 0; i < b.copies; i++ {
+		for range b.copies {
 			n++
 			barcode := fmt.Sprintf("BK-%04d", n)
 			note := ""

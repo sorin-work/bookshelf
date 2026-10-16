@@ -141,7 +141,7 @@ func TestRenew(t *testing.T) {
 	}
 
 	later := f.today.AddDays(20)
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		if l, err = f.s.Renew(ctx, l.ID, later); err != nil {
 			t.Fatalf("renewal %d: %v", i+1, err)
 		}
