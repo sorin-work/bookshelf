@@ -308,3 +308,25 @@ func (s *Server) setActive(w http.ResponseWriter, r *http.Request) {
 	}
 	http.Redirect(w, r, fmt.Sprintf("/members/%d", m.ID), http.StatusSeeOther)
 }
+
+func (s *Server) anonymise(w http.ResponseWriter, r *http.Request) {
+	m, ok := s.memberFromPath(w, r)
+	if !ok {
+		return
+	}
+	err := s.store.Anonymise(r.Context(), m.ID)
+	switch {
+	case errors.Is(err, store.ErrStillActive):
+		http.Error(w, "Close the account first.", http.StatusConflict)
+		return
+	case errors.Is(err, store.ErrOwesFines):
+		http.Error(w, m.Name+" still owes fines. Take payment or waive them first.", http.StatusConflict)
+		return
+	case err != nil:
+		s.serverError(w, r, err)
+		return
+	}
+	s.log.Info("member anonymised", "member_id", m.ID, "by", currentUser(r).ID)
+	s.setFlash(w, "Personal details removed. Their loan history is kept without a name.")
+	http.Redirect(w, r, fmt.Sprintf("/members/%d", m.ID), http.StatusSeeOther)
+}

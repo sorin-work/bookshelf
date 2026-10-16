@@ -152,3 +152,17 @@ func TestUserInputIsEscaped(t *testing.T) {
 		t.Error("title rendered unescaped")
 	}
 }
+
+func TestAnonymiseMember(t *testing.T) {
+	c := newCirc(t)
+	member := "/members/" + itoa(c.mo.ID)
+	wantStatus(t, c.lib.post(member+"/anonymise", nil), http.StatusConflict)
+	c.lib.post(member+"/active", titleValues("active", "0"))
+	wantBody(t, c.lib.get(member), "Remove personal details")
+	wantRedirect(t, c.lib.post(member+"/anonymise", nil), member)
+	r := c.lib.get(member)
+	wantBody(t, r, "Former member", "Personal details removed.")
+	if strings.Contains(r.body, "mo@example.com") {
+		t.Error("email still shown")
+	}
+}

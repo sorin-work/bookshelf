@@ -148,5 +148,12 @@
       <button type="submit" class="secondary">Reopen account</button>
     {{end}}
   </form>
+  {{if and (not $m.Active) (ne $m.Name "Former member")}}
+  <form method="post" action="/members/{{$m.ID}}/anonymise" class="inline" data-confirm="Remove {{$m.Name}}'s name, email and phone for good?">
+    {{template "csrf" $}}
+    <button type="submit" class="link">Remove personal details</button>
+    <span class="muted">For members who asked to be forgotten. Can't be undone.</span>
+  </form>
+  {{end}}
 </section>
 {{end}}
