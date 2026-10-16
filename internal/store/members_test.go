@@ -135,3 +135,39 @@ func TestListMembersShow(t *testing.T) {
 		t.Errorf("closed: %d", n)
 	}
 }
+
+func TestAnonymise(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	l, err := f.checkout(t, "B1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.s.Anonymise(ctx, f.member.ID); !errors.Is(err, ErrStillActive) {
+		t.Errorf("open account: %v", err)
+	}
+	if _, err := f.s.Return(ctx, "B1", l.Due.AddDays(2), now); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.s.SetActive(ctx, f.member.ID, false, f.today, now); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.s.Anonymise(ctx, f.member.ID); !errors.Is(err, ErrOwesFines) {
+		t.Errorf("owing fines: %v", err)
+	}
+	fines, _ := f.s.Fines(ctx, f.member.ID, 5)
+	if err := f.s.ResolveFine(ctx, fines[0].ID, FinePaid, f.staff.ID, now); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.s.Anonymise(ctx, f.member.ID); err != nil {
+		t.Fatal(err)
+	}
+	u, _ := f.s.UserByID(ctx, f.member.ID)
+	if u.Name != "Former member" || u.Email == "m@example.com" || u.Phone != "" || u.PasswordHash != "" {
+		t.Errorf("personal details kept: %+v", u)
+	}
+	history, _ := f.s.LoanHistory(ctx, f.member.ID, 5)
+	if len(history) != 1 {
+		t.Errorf("loan history lost: %+v", history)
+	}
+}

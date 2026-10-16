@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -178,4 +179,34 @@ func (s *Store) UpdateContact(ctx context.Context, id int64, name, phone string)
 		return ErrNotFound
 	}
 	return nil
+}
+
+var (
+	ErrStillActive = errors.New("close the account before removing personal details")
+	ErrOwesFines   = errors.New("the member still has unpaid fines")
+)
+
+// Anonymise removes a closed member's personal details: name, email,
+// phone, notes and password. Loans and paid fines stay, attached to
+// "Former member", so the library's statistics don't change.
+func (s *Store) Anonymise(ctx context.Context, id int64) error {
+	return s.inTx(ctx, func(tx *sql.Tx) error {
+		u, err := userByID(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if u.Active {
+			return ErrStillActive
+		}
+		owed, err := finesOwed(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if owed > 0 {
+			return ErrOwesFines
+		}
+		_, err = tx.ExecContext(ctx, `UPDATE users SET name = 'Former member', email = ?, phone = '', notes = '',
+			password_hash = '' WHERE id = ?`, fmt.Sprintf("removed-%d@invalid", id), id)
+		return err
+	})
 }
