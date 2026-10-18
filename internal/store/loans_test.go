@@ -268,3 +268,26 @@ func TestPolicyCacheIsCopied(t *testing.T) {
 		t.Errorf("cache not refreshed after saving: %d", again.LoanDays)
 	}
 }
+
+// A policy saved by an older version lacks the newer settings; they must
+// come out as defaults rather than zero, or holds and fines would quietly
+// switch off after an upgrade.
+func TestOldSavedPolicyGetsNewDefaults(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO settings (key, value) VALUES ('lending_policy',
+		'{"LoanDays":14,"MaxRenewals":1,"MaxLoans":3,"ClosedDays":[0,6]}')`); err != nil {
+		t.Fatal(err)
+	}
+	p, err := s.Policy(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	def := domain.DefaultPolicy()
+	if p.LoanDays != 14 || len(p.ClosedDays) != 2 {
+		t.Errorf("saved values lost: %+v", p)
+	}
+	if p.MaxHolds != def.MaxHolds || p.HoldPickupDays != def.HoldPickupDays || p.FinePerDay != def.FinePerDay || p.Currency != def.Currency {
+		t.Errorf("new settings not defaulted: %+v", p)
+	}
+}
