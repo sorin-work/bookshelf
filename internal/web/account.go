@@ -1,9 +1,11 @@
 package web
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/sorin-work/bookshelf/internal/store"
@@ -130,4 +132,92 @@ func (s *Server) updateDetails(w http.ResponseWriter, r *http.Request) {
 	}
 	s.setFlash(w, "Saved your details.")
 	http.Redirect(w, r, "/account", http.StatusSeeOther)
+}
+
+// exportData gives members everything the library holds about them, as
+// JSON.
+func (s *Server) exportData(w http.ResponseWriter, r *http.Request) {
+	u := currentUser(r)
+	type loanOut struct {
+		Title      string `json:"title"`
+		Barcode    string `json:"barcode"`
+		Borrowed   string `json:"borrowed"`
+		Due        string `json:"due"`
+		Returned   string `json:"returned,omitempty"`
+		Renewals   int    `json:"renewals"`
+		ReportLost bool   `json:"reported_lost,omitempty"`
+	}
+	type holdOut struct {
+		Title  string `json:"title"`
+		Status string `json:"status"`
+		Placed string `json:"placed"`
+	}
+	type fineOut struct {
+		Date   string `json:"date"`
+		For    string `json:"for"`
+		Amount int    `json:"amount_cents"`
+		Status string `json:"status"`
+	}
+	out := struct {
+		Name        string    `json:"name"`
+		Email       string    `json:"email"`
+		Phone       string    `json:"phone,omitempty"`
+		Card        string    `json:"card_number"`
+		CardExpires string    `json:"card_expires"`
+		Joined      string    `json:"joined"`
+		Loans       []loanOut `json:"loans"`
+		Holds       []holdOut `json:"holds"`
+		Fines       []fineOut `json:"fines"`
+	}{
+		Name: u.Name, Email: u.Email, Phone: u.Phone, Card: u.CardNumber,
+		CardExpires: u.CardExpires.String(), Joined: u.CreatedAt.Format(time.RFC3339),
+		Loans: []loanOut{}, Holds: []holdOut{}, Fines: []fineOut{},
+	}
+
+	active, err := s.store.ActiveLoans(r.Context(), u.ID)
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	history, _, err := s.store.LoanHistoryPage(r.Context(), u.ID, 100000, 0)
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	for _, l := range append(active, history...) {
+		lo := loanOut{Title: l.Title, Barcode: l.Barcode, Borrowed: l.CheckedOutAt.Format(time.RFC3339),
+			Due: l.Due.String(), Renewals: l.Renewals, ReportLost: l.Lost}
+		if l.Returned() {
+			lo.Returned = l.ReturnedAt.Format(time.RFC3339)
+		}
+		out.Loans = append(out.Loans, lo)
+	}
+	holds, err := s.store.OpenHolds(r.Context(), u.ID)
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	for _, h := range holds {
+		out.Holds = append(out.Holds, holdOut{Title: h.Title, Status: string(h.Status), Placed: h.PlacedAt.Format(time.RFC3339)})
+	}
+	fines, err := s.store.Fines(r.Context(), u.ID, 100000)
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	for _, f := range fines {
+		what := f.Note
+		if f.Kind == "late" {
+			what = "Late return: " + f.Title
+		}
+		out.Fines = append(out.Fines, fineOut{Date: f.CreatedAt.Format(time.RFC3339), For: what, Amount: f.Amount, Status: string(f.Status)})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Disposition", `attachment; filename="my-library-data.json"`)
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(out); err != nil {
+		s.log.Error("write data export", "err", err)
+	}
 }

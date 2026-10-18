@@ -35,6 +35,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /account/renew-all", s.requireUser(s.renewAll))
 	mux.HandleFunc("GET /account/details", s.requireUser(s.detailsPage))
 	mux.HandleFunc("POST /account/details", s.requireUser(s.updateDetails))
+	mux.HandleFunc("GET /account/data.json", s.requireUser(s.exportData))
 	mux.HandleFunc("GET /account/history", s.requireUser(s.history))
 	mux.HandleFunc("GET /account/password", s.requireUser(s.passwordPage))
 	mux.HandleFunc("POST /account/password", s.requireUser(s.changePassword))

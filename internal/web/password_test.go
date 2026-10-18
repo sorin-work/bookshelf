@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 )
@@ -54,4 +55,24 @@ func TestUpdateOwnDetails(t *testing.T) {
 	wantStatus(t, c.post("/account/details", titleValues("name", "", "phone", "1")), http.StatusUnprocessableEntity)
 	wantRedirect(t, c.post("/account/details", titleValues("name", "Ana Pop", "phone", "0722 111 222")), "/account")
 	wantBody(t, c.get("/account/details"), `value="Ana Pop"`, `value="0722 111 222"`)
+}
+
+func TestDownloadMyData(t *testing.T) {
+	c := newCirc(t)
+	c.checkout("C01")
+	r := c.member.get("/account/data.json")
+	wantStatus(t, r, http.StatusOK)
+	var data struct {
+		Email string `json:"email"`
+		Loans []struct {
+			Title string `json:"title"`
+		} `json:"loans"`
+		Holds []any `json:"holds"`
+	}
+	if err := json.Unmarshal([]byte(r.body), &data); err != nil {
+		t.Fatal(err)
+	}
+	if data.Email != "mo@example.com" || len(data.Loans) != 1 || data.Loans[0].Title != "Dune" || data.Holds == nil {
+		t.Errorf("export %+v", data)
+	}
 }

@@ -15,7 +15,7 @@
     <p class="muted">{{if eq (len .Data.Loans) 1}}item{{else}}items{{end}} on loan</p>
     {{if .Data.Owed}}<p>You owe <strong>{{money .Data.Owed .Data.Currency}}</strong> in fines. You can pay at the desk.</p>{{end}}
     <p><a href="/catalogue">Find something to read →</a></p>
-    <p class="muted"><a href="/account/details">Your details</a> · <a href="/account/password">Change password</a></p>
+    <p class="muted"><a href="/account/details">Your details</a> · <a href="/account/password">Change password</a> · <a href="/account/data.json" download>Download my data</a></p>
   </section>
 </div>
 
