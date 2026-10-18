@@ -289,7 +289,8 @@ details.set-password summary { cursor: pointer; color: var(--accent); }
   z-index: 10;
 }
 .skip-link:focus { top: 0.5rem; }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.library-card a:focus-visible, .library-card button:focus-visible { outline-color: #fff; }
 
 /* Small screens: the navigation wraps under the brand and tables scroll
    sideways instead of squashing their columns. */
