@@ -53,7 +53,7 @@
     <li class="with-cover">
       <div class="thumb">{{if .CoverURL}}<img src="{{.CoverURL}}" alt="" loading="lazy">{{end}}</div>
       <div>
-      <a href="/titles/{{.ID}}">{{.Title}}</a>{{with .Subtitle}} <span class="muted">: {{.}}</span>{{end}}
+      <a href="/titles/{{.ID}}">{{.Title}}</a>{{with .Subtitle}}<span class="muted">: {{.}}</span>{{end}}
       <div class="muted">{{.Authors}}{{if and .Authors .Year}} · {{end}}{{with .Year}}{{.}}{{end}}</div>
       <div class="availability">
         {{if .Available}}<span class="badge ok">{{.Available}} available</span>
