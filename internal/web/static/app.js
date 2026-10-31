@@ -58,3 +58,17 @@ document.addEventListener("error", (event) => {
     img.hidden = true;
   }
 }, true);
+
+// Barcode scanners type the number and then press Enter. On the card
+// field that would submit the checkout with no book yet, so Enter there
+// moves on to the barcode field instead.
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" || !(event.target instanceof HTMLInputElement) || event.target.name !== "card") {
+    return;
+  }
+  const barcode = event.target.form && event.target.form.querySelector("input[name=barcode]");
+  if (barcode && barcode.value === "") {
+    event.preventDefault();
+    barcode.focus();
+  }
+});
