@@ -108,9 +108,15 @@ func (s *Store) EnsureCards(ctx context.Context, expires domain.Date) (int, erro
 const userColumns = `id, email, name, phone, password_hash, role, coalesce(card_number, ''), coalesce(card_expires, ''), notes, active, created_at`
 
 func scanUser(row interface{ Scan(...any) error }) (User, error) {
+	return scanUserWith(row)
+}
+
+// scanUserWith scans a user followed by extra columns into extra.
+func scanUserWith(row interface{ Scan(...any) error }, extra ...any) (User, error) {
 	var u User
 	var expires, created string
-	if err := row.Scan(&u.ID, &u.Email, &u.Name, &u.Phone, &u.PasswordHash, &u.Role, &u.CardNumber, &expires, &u.Notes, &u.Active, &created); err != nil {
+	dest := []any{&u.ID, &u.Email, &u.Name, &u.Phone, &u.PasswordHash, &u.Role, &u.CardNumber, &expires, &u.Notes, &u.Active, &created}
+	if err := row.Scan(append(dest, extra...)...); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return User{}, ErrNotFound
 		}

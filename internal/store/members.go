@@ -21,9 +21,15 @@ type MemberFilter struct {
 	Offset int
 }
 
+// MemberRow is a member in the members list with how much they have out.
+type MemberRow struct {
+	User
+	Loans int
+}
+
 // ListMembers returns accounts matching a name, email or card number,
 // sorted by name, and the total number of matches.
-func (s *Store) ListMembers(ctx context.Context, f MemberFilter) ([]User, int, error) {
+func (s *Store) ListMembers(ctx context.Context, f MemberFilter) ([]MemberRow, int, error) {
 	if f.Limit <= 0 {
 		f.Limit = 25
 	}
@@ -55,19 +61,24 @@ func (s *Store) ListMembers(ctx context.Context, f MemberFilter) ([]User, int, e
 	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM users `+where, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT `+userColumns+` FROM users `+where+`
+	rows, err := s.db.QueryContext(ctx, `SELECT `+userColumns+`,
+		(SELECT count(*) FROM loans WHERE loans.user_id = users.id AND loans.returned_at IS NULL)
+		FROM users `+where+`
 		ORDER BY name COLLATE NOCASE, id LIMIT ? OFFSET ?`, append(args, f.Limit, f.Offset)...)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer rows.Close()
-	var out []User
+	var out []MemberRow
 	for rows.Next() {
-		u, err := scanUser(rows)
+		var m MemberRow
+		var loans int
+		u, err := scanUserWith(rows, &loans)
 		if err != nil {
 			return nil, 0, err
 		}
-		out = append(out, u)
+		m.User, m.Loans = u, loans
+		out = append(out, m)
 	}
 	return out, total, rows.Err()
 }

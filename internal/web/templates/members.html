@@ -19,13 +19,14 @@
 </form>
 {{if $d.Members}}
 <table class="table">
-  <thead><tr><th>Name</th><th>Card</th><th>Email</th><th>Card expires</th><th>Role</th></tr></thead>
+  <thead><tr><th>Name</th><th>Card</th><th>Email</th><th>On loan</th><th>Card expires</th><th>Role</th></tr></thead>
   <tbody>
   {{range $d.Members}}
     <tr>
       <td><a href="/members/{{.ID}}">{{.Name}}</a>{{if not .Active}} <span class="badge">closed</span>{{end}}</td>
       <td><code>{{.FormattedCard}}</code></td>
       <td>{{.Email}}</td>
+      <td>{{.Loans}}</td>
       <td>{{.CardExpires.Format "2 Jan 2006"}}</td>
       <td>{{if .IsLibrarian}}Librarian{{else}}Member{{end}}</td>
     </tr>

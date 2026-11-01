@@ -18,7 +18,7 @@ const membersPageSize = 25
 type membersPage struct {
 	Query   string
 	Show    string
-	Members []store.User
+	Members []store.MemberRow
 	Total   int
 	Page    int
 	pager
