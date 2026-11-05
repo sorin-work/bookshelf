@@ -26,7 +26,11 @@ their own loans.
   number of days before passing on.
 - **Fines**: a daily fine for late returns with a cap and optional grace
   days. Members who owe too much can't borrow until they pay.
-- **Dashboard and overdue list** for librarians.
+- **Dashboard, overdue list and monthly report** for librarians, with a
+  CSV download of the overdue list and printable due date slips and
+  library cards.
+- **Privacy**: members can download their data; closed accounts can have
+  their personal details removed while loan statistics stay intact.
 - **Lending rules** (loan period, renewals, limits, holds, fines, closing
   days) are edited on the settings page.
 
@@ -99,6 +103,19 @@ bookshelf backup /backups/bookshelf-$(date +%F).db
 # or, with Docker:
 docker compose exec app bookshelf backup /data/backup-$(date +%F).db
 ```
+
+## Troubleshooting
+
+- **"This form has expired"**: the CSRF cookie was missing or changed,
+  usually because cookies were cleared or the page was open for a long
+  time. Reload the page and submit again.
+- **Logged out straight away behind https**: set `SECURE_COOKIES=true` so
+  the browser keeps the cookies; on plain http leave it `false`.
+- **Due dates a day off**: set `LIBRARY_TIMEZONE` to the library's zone,
+  for example `Europe/Bucharest`.
+- **Covers don't show**: covers are loaded from the address on the title
+  (Open Library for looked up titles), so the browser needs internet
+  access.
 
 ## Configuration
 
