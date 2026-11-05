@@ -2,7 +2,10 @@ name: bookshelf
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        VERSION: ${VERSION:-}
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LIBRARY_NAME: ${LIBRARY_NAME:-Bookshelf}
