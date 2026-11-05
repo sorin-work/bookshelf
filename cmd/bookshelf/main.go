@@ -16,6 +16,7 @@ import (
 	"github.com/sorin-work/bookshelf/internal/config"
 	"github.com/sorin-work/bookshelf/internal/db"
 	"github.com/sorin-work/bookshelf/internal/domain"
+	"github.com/sorin-work/bookshelf/internal/jobs"
 	"github.com/sorin-work/bookshelf/internal/openlibrary"
 	"github.com/sorin-work/bookshelf/internal/seed"
 	"github.com/sorin-work/bookshelf/internal/store"
@@ -131,7 +132,7 @@ func run() error {
 		IdleTimeout:       120 * time.Second,
 	}
 
-	go expireHolds(ctx, st, cfg.Location, log)
+	go jobs.Housekeeping{Store: st, Location: cfg.Location, Logger: log}.Run(ctx, time.Hour)
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -159,30 +160,4 @@ func newLogger(cfg config.Config) *slog.Logger {
 		return slog.New(slog.NewTextHandler(os.Stdout, opts))
 	}
 	return slog.New(slog.NewJSONHandler(os.Stdout, opts))
-}
-
-// expireHolds closes uncollected holds once at start and then every hour,
-// handing their copies to the next member in each queue. It also clears
-// out expired sessions.
-func expireHolds(ctx context.Context, st *store.Store, loc *time.Location, log *slog.Logger) {
-	ticker := time.NewTicker(time.Hour)
-	defer ticker.Stop()
-	for {
-		now := time.Now()
-		n, err := st.ExpireHolds(ctx, domain.DateOf(now.In(loc)), now)
-		switch {
-		case err != nil && ctx.Err() == nil:
-			log.Error("expire holds", "err", err)
-		case n > 0:
-			log.Info("expired uncollected holds", "count", n)
-		}
-		if _, err := st.DeleteExpiredSessions(ctx, now); err != nil && ctx.Err() == nil {
-			log.Error("delete expired sessions", "err", err)
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-		}
-	}
 }
