@@ -23,7 +23,8 @@ holiday) the due date moves to the next day it is open.
 
 A renewal sets the due date to a full loan period from today, worked out
 the same way as at checkout, but never earlier than the current due date.
-Members renew from their account page; librarians from the member page.
+Members renew from their account page (one at a time or all at once);
+librarians from the member page or by scanning the copy at the desk.
 
 A loan can't be renewed when:
 
@@ -50,6 +51,16 @@ an hour; the copy then goes to the next member in the queue, or back on
 the shelf if nobody is waiting.
 
 Checking out any copy of a title closes the borrower's own hold on it.
+Librarians can also place a hold for a member from the title page, by
+card number.
+
+The title page gives a rough idea of the wait: each copy serves one member
+per loan period, so with two copies the third person in the queue can
+expect to wait about two loan periods. Returns are often earlier and
+renewals make it later, so it is only a guide.
+
+If the last copy of a title is withdrawn while members are still waiting,
+their holds are cancelled because they can never be filled.
 
 ## Fines
 
@@ -57,7 +68,9 @@ A late return costs the daily fine (0.25) for every day after the due
 date, up to the cap per item (5.00). With grace days set, items returned
 within that many days late cost nothing; after that every late day counts.
 
-Fines are added when the item comes back. The overdue list shows what an
+Fines are added when the item comes back. A book reported lost ends the
+loan without a late fine; the librarian can add a replacement charge
+instead. The overdue list shows what an
 item would cost if it came back today. Librarians can also add charges by
 hand (for a damaged or lost book), take payments and waive fines on the
 member page.
