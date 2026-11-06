@@ -62,8 +62,10 @@ internal/store         SQL for every table; checkout, return, renewal and
                        holds run in transactions
 internal/web           handlers, middleware, sessions, CSRF, templates,
                        static files
+internal/jobs          hourly housekeeping: expiring holds and sessions
 internal/seed          the demo library
 internal/openlibrary   ISBN lookups
+internal/version       the version shown in the footer
 ```
 
 Logins are session cookies backed by a `sessions` table (only a hash of
