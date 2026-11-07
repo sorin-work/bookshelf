@@ -59,3 +59,12 @@ func TestMonthlyReport(t *testing.T) {
 	)
 	wantStatus(t, c.member.get("/report"), http.StatusForbidden)
 }
+
+func TestMonthlyReportWithNoActivity(t *testing.T) {
+	env := newTestEnv(t)
+	lib := env.librarian()
+	r := lib.get("/report")
+	wantStatus(t, r, http.StatusOK)
+	wantBody(t, r, "<td>Apr 2025</td>", "<td>Mar 2026</td>", `class="bar bar-0"`,
+		"<tr><th>Total</th><th>0</th><th></th><th>0</th><th>0</th></tr>")
+}
