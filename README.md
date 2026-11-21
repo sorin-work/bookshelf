@@ -119,6 +119,11 @@ docker compose exec app bookshelf backup /data/backup-$(date +%F).db
   (Open Library for looked up titles), so the browser needs internet
   access.
 
+## Roadmap
+
+Ideas for what could come next, with notes on how each would be built, are in
+[ROADMAP.md](ROADMAP.md).
+
 ## Configuration
 
 | Variable           | Default        | Meaning                                              |
